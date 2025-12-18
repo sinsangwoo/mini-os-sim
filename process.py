@@ -12,5 +12,21 @@ class Process:
         self.arrival_time = arrival_time
         self.burst_time = burst_time
 
-        #4. 프로세스 생성 메시지를 출력함
-        print(f"✨ [PID: {self.pid}] 프로세스 생성! (도착: {arrival_time}, 실행시간: {burst_time})")
+        #4. 레지스터(context) 초기화. CPU 레지스터를 딕셔너리로 표현
+        self.registers = {
+            # 프로그램 카운터, 현재 실행 중인 명령어의 주소를 가리킴
+            'PC' : 0, 
+
+            # 스택 포인터, 스택의 최상단 주소를 가리킴
+            'SP' : 0,
+
+            # 일반 목적 레지스터들, CPU가 데이터를 임시로 저장하는 용도
+            "AX": 0,  
+            "BX": 0   
+
+        }
+
+        #5. 프로세스 생성 메시지를 출력함
+        print(f"✨ [PID: {self.pid}] 프로세스 생성!")
+        print(f"(도착: {arrival_time}, 실행시간: {burst_time})")
+        print(f"(Context 초기화 완료)")
