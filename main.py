@@ -5,27 +5,28 @@ def main():
 
     #모의 시나리오
 
-    #1. 프로세스 하나 생성
+    #1. 0초에 도착, 3초동안 실행되는 프로세스 하나 생성
     p1 = Process(arrival_time=0, burst_time=3)
 
-    #2. 생성 직후의 레지스터 상태 확인
-    print(f"\n[PID {p1.pid}의 초기 레지스터 상태]")
-    print(p1.registers)
+    #2. 생성 직후의 남은 시간 출력
+    print(f"\n[초기 상태] 남은 시간: {p1.remaining_time}")
 
 
-    #3. CPU가 p1을 실행한 후의 레지스터 상태 변경 시뮬레이션
-    print("\n--- [시나리오: CPU가 p1을 3초간 실행했다고 가정] ---")
+    #3. CPU실행 시뮬레이션
+    print("\n--- [CPU 실행 시작] ---")
 
-    #4. 가상의 CPU가 p1을 실행해서 PC(프로그램 카운터)가 증가했다고 가정
-    p1.registers["PC"] = 3
+    #4. 3단위 시간 동안 CPU가 프로세스를 실행
+    for i in range(3):
+        print(f"⏱️  Tick {i+1}: CPU가 프로세스를 실행합니다...")
 
-    #5. AX 레지스터에 어떤 계산 결과 10이 저장되었다고 가정
-    p1.registers["AX"] = 10  
-    
-    print(f"[PID {p1.pid}의 실행 후 레지스터 상태 (Context Save)]")
-    print(p1.registers) 
+        #5. 프로세스의 tick 메서드를 호출하여 1단위 시간 동안 실행 시뮬레이션
+        p1.tick() 
 
-    print("---미니 프로세스 시뮬레이터 종료---")
+        #6. 현재 남은 시간과 프로그램 카운터(PC) 출력
+        print(f"   -> [PID {p1.pid}] 남은 시간: {p1.remaining_time}, PC: {p1.registers['PC']}")
+
+    #7. CPU 실행 종료 메시지 출력
+    print("\n--- [CPU 실행 종료] ---")
 
 if __name__ == "__main__":
     main()
