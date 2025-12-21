@@ -1,31 +1,29 @@
-from process import Process
-
+from process import Process, ProcessState
 def main():
     print("---미니 프로세스 시뮬레이터 시작---")
 
     #모의 시나리오
 
-    #1. 0초에 도착, 3초동안 실행되는 프로세스 하나 생성
-    p1 = Process(arrival_time=0, burst_time=3)
+    # 1. 새로운 프로세스 생성
+    p1 = Process(0, 5)
 
-    #2. 생성 직후의 남은 시간 출력
-    print(f"\n[초기 상태] 남은 시간: {p1.remaining_time}")
+    # 2. 초기 상태 확인
+    print(f"\n1. 생성 직후 상태: {p1.state}")
+    
+    # 3. 상태 변경 시뮬레이션
+    print("\n2. OS가 프로세스를 준비 큐(Ready Queue)로 보냅니다.")
+    p1.state = ProcessState.READY
+    print(f"   -> 현재 상태: {p1}")  # __repr__ 덕분에 예쁘게 나옴
+    
+    print("\n3. 스케줄러가 이 프로세스를 선택해서 CPU를 줬습니다!")
+    p1.state = ProcessState.RUNNING
+    print(f"   -> 현재 상태: {p1}")
+    
+    print("\n4. 갑자기 키보드 입력을 받아야 해서 대기합니다.")
+    p1.state = ProcessState.WAITING
+    print(f"   -> 현재 상태: {p1}")
 
-
-    #3. CPU실행 시뮬레이션
-    print("\n--- [CPU 실행 시작] ---")
-
-    #4. 3단위 시간 동안 CPU가 프로세스를 실행
-    for i in range(3):
-        print(f"⏱️  Tick {i+1}: CPU가 프로세스를 실행합니다...")
-
-        #5. 프로세스의 tick 메서드를 호출하여 1단위 시간 동안 실행 시뮬레이션
-        p1.tick() 
-
-        #6. 현재 남은 시간과 프로그램 카운터(PC) 출력
-        print(f"   -> [PID {p1.pid}] 남은 시간: {p1.remaining_time}, PC: {p1.registers['PC']}")
-
-    #7. CPU 실행 종료 메시지 출력
+    #4. CPU 실행 종료 메시지 출력
     print("\n--- [CPU 실행 종료] ---")
 
 if __name__ == "__main__":
