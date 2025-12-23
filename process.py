@@ -87,6 +87,35 @@ class Process:
             self.registers["PC"] += 1
         else:
             print(f"[PID: {self.pid}] 이미 완료된 프로세스입니다.")
+    
+    # 프로세스의 상태를 변경하는 메서드, 유효하지 않은 상태 변경은 에러를 발생시킴
+    def change_state(self, new_state):
+        old_state = self.state
+        
+        # 같은 상태로 변경하려는 경우 무시
+        if old_state == new_state:
+            print(f"[PID: {self.pid}] 이미 {new_state.value} 상태입니다.")
+            return
+        
+        # 규칙 위반 검사(허용되지 않는 상태 전환의 경우 막음)
+        # [규칙 1] Waiting에서는 오직 Ready로만 갈 수 있음
+        if old_state == ProcessState.WAITING and new_state != ProcessState.READY:
+            print(f"[PID: {self.pid}] waiting 상태에서는 Ready 상태로만 변경할 수 있습니다.")
+            return
+        
+        # [규칙 2] Ready에서는 오직 Running으로만 갈 수 있음
+        if old_state == ProcessState.READY and new_state != ProcessState.RUNNING:
+            print(f"[PID: {self.pid}] ready 상태에서는 Running 상태로만 변경할 수 있습니다.")
+            return
+        
+        # [규칙 3] 종료된 프로세스(Terminated)는 다른 상태로 변경할 수 없음
+        if old_state == ProcessState.TERMINATED:
+            print(f"[PID: {self.pid}] 종료된 프로세스는 상태를 변경할 수 없습니다.")
+            return
+        
+        # 상태 변경 확정
+        self.state = new_state
+        print(f"[PID: {self.pid}] 상태 변경: {old_state.value} -> {new_state.value}")
 
     # 11. 프로세스의 현재 상태를 문자열로 표현하는 메서드
     def __repr__(self):
