@@ -1,35 +1,31 @@
 from process import Process, ProcessState
+# main.py 예시 구조
 def main():
-    print("---미니 프로세스 시뮬레이터 시작---")
-
-    #모의 시나리오
-
     # 새로운 프로세스 생성
     p1 = Process(0, 5)
+    p2 = Process(1, 10)
+    p3 = Process(2, 3)
 
-    print("\n--- [정상적인 시나리오 테스트] ---")
-    # New -> Ready (가능)
-    p1.change_state(ProcessState.READY)
-
-    # Ready -> Running (가능)
+    # 상태를 다양하게 변경
     p1.change_state(ProcessState.RUNNING)
-    
-    # Running -> Waiting (가능: I/O 요청)
-    p1.change_state(ProcessState.WAITING)
-    
-    print("\n--- [비정상적인 시나리오 테스트] ---")
+    p2.change_state(ProcessState.READY)
 
-    # Waiting -> Running (불가능. 새치기 금지)
-    # 반드시 Waiting -> Ready -> Running 순서여야 함
-    print(">> 시도: Waiting에서 바로 Running으로 가보자")
-    p1.change_state(ProcessState.RUNNING)
-    
-    # Waiting -> Ready (가능)
-    print("\n>> 시도: Waiting에서 Ready로는 갈 수 있나?")
-    p1.change_state(ProcessState.READY) 
+    # 3번 프로세스는 READY -> WAITING으로 상태 변경
+    p3.change_state(ProcessState.READY)
+    p3.change_state(ProcessState.WAITING)
 
-    # CPU 실행 종료 메시지 출력
+    # 프로세스 상태 출력
+    print("\n--- [프로세스 상태 목록 (Process Table)] ---")
+
+    # 리스트에 담아서 출력해보자
+    process_list = [p1, p2, p3]
+    
+    # 반복문을 돌며 각 프로세스를 출력 (이때 __repr__이 작동함)
+    for p in process_list:
+        print(p)
+
     print("\n--- [CPU 실행 종료] ---")
+
 
 if __name__ == "__main__":
     main()

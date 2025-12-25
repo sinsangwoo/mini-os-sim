@@ -117,6 +117,14 @@ class Process:
         self.state = new_state
         print(f"[PID: {self.pid}] 상태 변경: {old_state.value} -> {new_state.value}")
 
-    # 11. 프로세스의 현재 상태를 문자열로 표현하는 메서드
+    # 11. 객체인 프로세스를 문자열로 표현하는 매서드로, 개발자가 프로세스의 상태를 쉽게 확인할 수 있도록 함. 
+    # 쉽게 말해 프로세스의 정보를 한눈에 보여주는 역할을 함.
     def __repr__(self):
-        return f"[PID:{self.pid} | {self.state.name} | Rem:{self.remaining_time}]"
+        # 상태는 길이가 재각각이라 보기 싫으므로 보기 좋게 맞춤
+        state_str = f"{self.state.name:<10}" 
+
+        # 시간 정보도 보기 좋게 포맷팅
+        return (f"[PID:{self.pid:<2} | {state_str} | "
+            f"Arrival:{self.arrival_time:>3} | "
+            f"Burst:{self.burst_time:>3} | "
+            f"Remaining:{self.remaining_time:>3}]")
