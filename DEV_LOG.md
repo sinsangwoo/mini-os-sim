@@ -22,10 +22,10 @@
 
 Python
 
-# 수정 전
+수정 전
 return f"Remaining time:{self.remaining_time:>2}]" 
 
-# 수정 후 (공백과 칸 수를 명확히 지정)
+수정 후 (공백과 칸 수를 명확히 지정)
 return f"Remaining time: {self.remaining_time:>2}]"
 
 💡 깨달은 점
