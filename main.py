@@ -4,48 +4,48 @@ import random
 def main():
     print("--- [CPU 실행 시작] ---\n")
 
-    # 프로세스 공장 생성
-    print("\n🏭 [System] 프로세스 5개를 생성하여 Job Queue에 넣습니다.")
-
-    job_queue = []
-    for i in range(5):
-        # 도착 시간 : i (0에서 4까지 순차적으로 증가)
-        # 실행 시간 : 1에서 10 사이의 랜덤 값
-        p = Process(arrival_time=i, burst_time=random.randint(1, 10))
-        job_queue.append(p)
-
-    # Job Queue 확인. 쉽게 말해, 현재 잡 큐에 있는 프로세스들의 상태를 출력하는 것.
-    print(f"\n📋 [Job Queue Status] 총 {len(job_queue)}개의 프로세스 대기 중")
-    print("=" * 75) 
-    print(f"{'PID':<5} | {'State':<10} | {'Arrival time':<5} | {'Burst time':<5} | {'Remaining time':<5}")
-    print("-" * 75)
-
-    for p in job_queue:
-        # 객체 내부 데이터를 꺼내서 쓰는 연습. 쉽게 말해, 잡 큐에 있는 프로세스들의 내부 데이터를 출력하는 것.
-        print(f"{p.pid:<5} | {p.state.name:<10} | {p.arrival_time:<12} | {p.burst_time:<10} | {p.remaining_time:<12}")
-
-    print("=" * 75)
-    # 시나리오 : 모든 프로세스들의 상태를 Ready로 변경하기. 쉽게 말해, OS가 메모리로 프로세스를 로드하는 것.
-    # 준비 큐 생성
-    ready_queue = []
-
-    # job queue에 있는 모든 프로세스를 꺼내서 준비 큐에 넣기
-    while job_queue:
-        # pop : 리스트의 맨 앞 요소를 꺼내 반환하고, 리스트에서 제거하는 함수
-        p = job_queue.pop(0)
-
-        # 프로세스 상태를 Ready로 변경
-        p.change_state(ProcessState.READY)
-
-        # 준비 큐에 추가
-        ready_queue.append(p)
+     # 1. [탄생] 프로세스 생성 (실행 시간 3초짜리)
+    p1 = Process(arrival_time=0, burst_time=3)
+    print(f"\n [1. New] 프로세스 탄생: {p1}")
     
-    # 준비 큐 확인
-    print(f"\n📋 [Ready Queue Status] 총 {len(ready_queue)}개의 프로세스 준비 완료")
-
-    # __repr__ 매서드를 활용하여 준비 큐의 상태 출력
-    for p in ready_queue:
-        print(p)
+    # 2. [입장] 준비 큐로 이동
+    print("\n [2. Admission] 준비 큐에 줄을 섭니다.")
+    p1.change_state(ProcessState.READY)
+    
+    # 3. [실행] 스케줄러가 선택함 (Dispatch)
+    print("\n [3. Dispatch] CPU를 할당받았습니다!")
+    p1.change_state(ProcessState.RUNNING)
+    
+    # 4. [작업] CPU가 1초 동안 일을 시킴 (Tick)
+    print("\n [4. Execution] 1초간 실행 중...")
+    p1.tick() # 남은 시간 3 -> 2
+    print(f"   -> 상태: {p1}")
+    
+    # 5. [중단] I/O 요청 발생 (Blocking)
+    print("\n [5. I/O Request] 키보드 입력을 기다립니다.")
+    p1.change_state(ProcessState.WAITING)
+    
+    # 6. [대기] I/O 완료 (Wakeup)
+    print("\n [6. I/O Complete] 입력 완료! 다시 줄을 섭니다.")
+    # 주의: Waiting -> Running은 불가능! Ready로 가야 함.
+    p1.change_state(ProcessState.READY)
+    
+    # 7. [재실행] 다시 CPU 잡음
+    print("\n [7. Dispatch] 다시 CPU를 잡았습니다!")
+    p1.change_state(ProcessState.RUNNING)
+    
+    # 8. [마무리] 남은 2초를 마저 실행
+    print("\n [8. Execution] 남은 작업을 수행합니다...")
+    p1.tick() # 남은 시간 2 -> 1
+    print(f"   -> 1초 실행 후: {p1}")
+    
+    p1.tick() # 남은 시간 1 -> 0
+    print(f"   -> 1초 실행 후: {p1}")
+    
+    # 9. [종료] 작업 완료
+    if p1.remaining_time == 0:
+        print("\n [9. Terminated] 모든 작업이 끝났습니다.")
+        p1.change_state(ProcessState.TERMINATED)
 
     print("\n--- [CPU 실행 종료] ---")
 
