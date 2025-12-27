@@ -103,9 +103,9 @@ class Process:
             print(f"[PID: {self.pid}] waiting 상태에서는 Ready 상태로만 변경할 수 있습니다.")
             return
         
-        # [규칙 2] Ready에서는 오직 Running으로만 갈 수 있음
-        if old_state == ProcessState.READY and new_state != ProcessState.RUNNING:
-            print(f"[PID: {self.pid}] ready 상태에서는 Running 상태로만 변경할 수 있습니다.")
+        # [규칙 2] running으로 변경하려면 반드시 ready 상태여야 함
+        if new_state == ProcessState.RUNNING and old_state != ProcessState.READY:
+            print(f"[PID: {self.pid}] Running 상태로 변경하려면 Ready 상태여야 합니다.")
             return
         
         # [규칙 3] 종료된 프로세스(Terminated)는 다른 상태로 변경할 수 없음
