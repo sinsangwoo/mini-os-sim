@@ -41,3 +41,13 @@ return f"Remaining time: {self.remaining_time:>2}]"
 ### 📝 배운 점 (TIL)
 * **`pop(0)` vs `pop()`:** `pop()`은 맨 뒤(스택)에서 꺼내고, `pop(0)`은 맨 앞(큐)에서 꺼낸다. 퍼스트 인 퍼스트 아웃을 구현할 것이므로 pop(0)을 써야한다.
 * **객체 이동:** 리스트에서 `pop`해서 다른 리스트에 `append`하면, 객체는 복사되는 게 아니라 **참조(주소)만 이동**한다. 즉, `ready_queue`에 있는 놈을 수정하면 원본도 수정된다. 
+
+## 📅 11일 차: FCFS 스케줄러 구현
+
+### 🎯 오늘의 목표
+1. `Scheduler` 부모 클래스를 상속받아 `FCFSScheduler` 구현하기.
+2. `deque`를 사용하여 FIFO(선착순) 로직이 잘 동작하는지 테스트하기.
+
+### 📝 배운 점 (TIL)
+* **상속(Inheritance):** 부모 클래스(`Scheduler`)에 공통 기능(`add_process`)을 두고, 자식 클래스(`FCFSScheduler`)에서 고유 기능(`get_next_process`)만 구현하니 코드가 깔끔하다.
+* **Deque:** 큐를 구현할 때는 리스트보다 `collections.deque`가 성능상 유리하다는 것을 알았다.

@@ -15,5 +15,16 @@ class Scheduler:
 
     def get_next_process(self):
         # 다음에 실행할 프로세스를 결정하여 반환
-        # 자식 클래스(FCFS, RR 등)에서 구체적인 로직을 구현해야 함
         raise NotImplementedError("이 메서드는 자식 클래스에서 구현해야 합니다.")
+    
+
+# FCFS 스케줄러 
+class FCFS_Scheduler(Scheduler):
+    # FCFS 스케줄링이란, 쉽게 말해 먼저 도착한 프로세스를 먼저 실행하는 스케줄러
+    
+    # 이 함수의 역할은 쉽게 말해, 준비 큐에서 가장 앞에 있는 프로세스를 꺼내오는 것
+    def get_next_process(self):
+        if not self.ready_queue:
+            return None
+        
+        return self.ready_queue.popleft()
