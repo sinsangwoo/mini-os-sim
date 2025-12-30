@@ -51,3 +51,13 @@ return f"Remaining time: {self.remaining_time:>2}]"
 ### 📝 배운 점 (TIL)
 * **상속(Inheritance):** 부모 클래스(`Scheduler`)에 공통 기능(`add_process`)을 두고, 자식 클래스(`FCFSScheduler`)에서 고유 기능(`get_next_process`)만 구현하니 코드가 깔끔하다.
 * **Deque:** 큐를 구현할 때는 리스트보다 `collections.deque`가 성능상 유리하다는 것을 알았다.
+
+## 📅 12일 차: CPU 로드와 문맥 교환 구현
+
+### 🎯 오늘의 목표
+1. `CPU` 클래스에 `load_process`를 구현하여 프로세스를 교체하는 로직 만들기.
+2. 교체 시 `Context Switch` 로그가 정확히 찍히는지 확인하기.
+
+### 📝 배운 점 (TIL)
+* **문맥 교환의 실체:** 코드로 보니 별거 없어 보이지만(`current_process` 변수 바꾸기), 실제로는 여기서 레지스터 백업/복구 작업이 일어나며 시스템 자원을 소모한다는 것을 이해함.
+* **Dispatcher:** 스케줄러가 '두뇌'라면, `load_process`를 수행하는 CPU(Dispatcher)는 '손발'이다.
