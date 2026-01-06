@@ -21,45 +21,61 @@ def main():
     print(f"시스템 초기화 완료. (총 {len(JOB_LIST)}개의 작업 대기 중)\n")
     
     while global_time < MAX_TIME:
-        print(f"\n[Time: {global_time}] ------------------------------------")
+        print(f"\n[Time : {global_time}] ------------------------------------")
         
-        # [Arrival] 프로세스 도착 처리
+        # [Arrival] 프로세스 도착 (동일)
+        # JOB_LIST를 복사본이 아닌 원본으로 순회하면서, 도착한 프로세스를 준비 큐에 추가
         for p in list(JOB_LIST): 
+
+            # 도착 시간이 현재 시간과 같으면 준비 큐에 추가. 
+            # 왜 도착 시간과 현재 시간이 같아야 하냐면, 도착 시간이 n인 프로세스는 n틱이 지난 시점에 도착함
             if p.arrival_time == global_time:
                 scheduler.add_process(p)
-                p.change_state(ProcessState.READY)
-                JOB_LIST.remove(p)
-                print(f"✨ [Arrival] PID {p.pid} 도착 -> Ready Queue 등록")
 
-        # [Scheduling] CPU가 놀고 있으면 다음 타자 섭외
+                # Ready 상태로 변경. 
+                # Ready 상태란 cpu가 할당되면 바로 실행할 준비가 된 상태
+                p.change_state(ProcessState.READY)
+
+                # JOB_LIST에서 제거. 준비 큐에 들어갔으니 더 이상 대기할 필요 없음
+                JOB_LIST.remove(p)
+                print(f"[Arrival] PID {p.pid} 도착 -> Ready Queue 등록")
+
+        # [Scheduling] CPU가 놀고 있으면 다음 프로세스 할당
         if not cpu.is_busy():
-            # 스케줄러에게 "다음 누구?" 물어봄
             next_process = scheduler.get_next_process()
-            
+
+            # CPU에 프로세스 로드. 파이썬에서 if문 뒤에 객체만 오는 경우, 객체가 존재하면 아래 명령을 실행하라는 의미
             if next_process:
-                # 대기자가 있으면 CPU에 올림 (Dispatch)
                 cpu.load_process(next_process)
-                
-                # 상태 변경 (Ready -> Running)
-                # [중요] CPU에 올라가는 순간 상태를 바꿔줌
                 next_process.change_state(ProcessState.RUNNING)
             else:
-                # 대기자도 없으면 그냥 놂
-                print("   (IDLE) 대기 중인 프로세스가 없습니다.")
+                # [수정] 로그가 너무 많아서 IDLE 로그는 생략하거나 간소화
+                # print("   (IDLE) 대기 중...") 
+                pass
 
-        # [Execution] CPU 실행
+        # [Execution & Termination] 실행 및 종료 처리
         if cpu.is_busy():
+            # (1) 일단 1틱 실행
             cpu.run()
-            # 현재 누구 실행 중인지 로그 출력
-            print(f"   [Running] PID {cpu.current_process.pid} (남은 시간: {cpu.current_process.remaining_time})")
+            current = cpu.current_process
+            print(f"   [Running] PID {current.pid} (남은 시간: {current.remaining_time})")
             
-            # (내일 할 일: 다 끝났으면 종료 처리하는 로직이 여기에 필요함)
-            # 지금은 종료 로직이 없어서 남은 시간이 -1, -2... 계속 내려감
+            # (2) [16일 차 추가] 다 끝났는지 검사
+            if current.remaining_time == 0:
+                print(f"   [Finish] PID {current.pid} 작업 완료")
+                
+                # 상태 변경 (Running -> Terminated)
+                current.change_state(ProcessState.TERMINATED)
+                
+                # CPU 비우기 (Unload)
+                # 다음 루프(Time+1)에서 cpu.is_busy()가 False가 되므로, 
+                # 자연스럽게 스케줄러가 다음 프로세스를 가져오게 됨
+                cpu.current_process = None 
             
         global_time += 1
         time.sleep(0.5)
 
-    print("\n--- 🛑 시뮬레이션 종료 ---")
+    print("\n--- 시뮬레이션 종료 ---")
 
 if __name__ == "__main__":
     main()
