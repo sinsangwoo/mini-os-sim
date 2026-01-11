@@ -33,7 +33,7 @@ class CPU:
         self.current_process = process
         
         # 문맥 교환 로그 출력. 아무것도 못하는 오버헤드 상태가 발생하는 지점
-        print(f"[Context Switch] CPU 교체: PID {prev_pid} -> PID {process.pid}")
+        print(f"   💾 [Switch] Context Change: PID {prev_pid} -> PID {process.pid}")
 
     
     # CPU를 1 틱 실행하는 메서드
