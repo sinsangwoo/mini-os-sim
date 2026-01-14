@@ -3,36 +3,29 @@ from process import Process, ProcessState
 from scheduler import FCFS_Scheduler
 from cpu import CPU
 
-def main():
-    print("--- 🖥️  Mini OS Simulator Booting... ---")
+def run_simulation(scheduler, job_list, max_time=20):
+    # 주어진 스케줄러와 작업 목록으로 시뮬레이션을 수행하고 결과를 반환함
+    print(f"\n시뮬레이션 시작 (Scheduler: {type(scheduler).__name__})")
     
-    scheduler = FCFS_Scheduler()
     cpu = CPU()
     global_time = 0
-    
-    # [분석용 시나리오]
-    JOB_LIST = [
-        Process(arrival_time=0, burst_time=10), # P1
-        Process(arrival_time=1, burst_time=1),  # P2
-        Process(arrival_time=2, burst_time=1)   # P3
-    ]
-    
-    # 나중에 통계를 내기 위해 완료된 프로세스들을 모아둘 리스트
     finished_processes = []
     
-    MAX_TIME = 20
+    # job_list를 복사해서 사용 (원본 보존)
+    pending_jobs = list(job_list)
     
-    while global_time < MAX_TIME:
-        # ... (기존 로그 출력 및 Arrival 로직 동일) ...
+    while global_time < max_time:
         print(f"\n[Time: {global_time:>2}] {'='*30}") 
 
         # 1. [Arrival]
-        for p in list(JOB_LIST): 
+        # 리스트 순회 시 삭제 문제가 발생하지 않도록 복사본이나 인덱스 관리 필요
+        # 여기서는 pending_jobs의 복사본을 만들어 순회
+        for p in list(pending_jobs): 
             if p.arrival_time == global_time:
                 scheduler.add_process(p)
                 p.change_state(ProcessState.READY)
-                JOB_LIST.remove(p)
-                print(f"   ✨ [Arrival] PID {p.pid} 도착")
+                pending_jobs.remove(p)
+                print(f"   [Arrival] PID {p.pid} 도착")
 
         # 2. [Scheduling]
         if not cpu.is_busy():
@@ -45,33 +38,34 @@ def main():
         if cpu.is_busy():
             cpu.run()
             current = cpu.current_process
-            print(f"   ⚙️  [Run] PID {current.pid} 실행 중 | RT: {current.remaining_time}")
+            print(f"    [Run] PID {current.pid} 실행 중 | RT: {current.remaining_time}")
             
             if current.remaining_time == 0:
-                print(f"   🎉 [Done] PID {current.pid} 종료!")
+                print(f"   [Done] PID {current.pid} 종료!")
                 current.change_state(ProcessState.TERMINATED)
-                
-                # [19일 차 추가] 반환 시간(Turnaround Time) 계산
-                # TT = 완료 시간 - 도착 시간
-                # 완료 시간 = 현재 시간 + 1 (이번 틱까지 실행했으므로)
                 current.turnaround_time = (global_time + 1) - current.arrival_time
-                
-                # 통계용 리스트에 저장
                 finished_processes.append(current)
-                
                 cpu.current_process = None 
 
-        # === [19일 차 핵심] 대기 시간 누적 (Aging) ===
-        # Ready Queue에 있는 모든 프로세스에게 "너네 1초 더 기다렸다"고 기록
+        # 4. [Aging] 대기 시간 누적
         for p in scheduler.ready_queue:
             p.waiting_time += 1
             
         global_time += 1
-        # time.sleep(0.1)
+        
+        # 모든 작업이 완료되었고, 대기 중인 작업도 없으면 조기 종료
+        if not pending_jobs and not cpu.is_busy() and not scheduler.ready_queue:
+            print("\n모든 작업이 완료되어 시뮬레이션을 조기 종료합니다.")
+            break
+            
+    return finished_processes
 
-    # === [최종 성적표 출력] ===
+def print_report(finished_processes):
+    """
+    시뮬레이션 결과를 표 형태로 출력합니다.
+    """
     print("\n" + "="*50)
-    print("📊 [Final Report] 시뮬레이션 결과 통계")
+    print("[Final Report] 시뮬레이션 결과 통계")
     print("="*50)
     print(f"{'PID':<5} | {'Arrival':<8} | {'Burst':<6} | {'Waiting':<8} | {'Turnaround':<10}")
     print("-" * 50)
@@ -79,7 +73,6 @@ def main():
     total_waiting = 0
     total_turnaround = 0
     
-    # PID 순서대로 정렬해서 출력
     finished_processes.sort(key=lambda x: x.pid)
     
     for p in finished_processes:
@@ -88,12 +81,32 @@ def main():
         total_turnaround += p.turnaround_time
         
     print("-" * 50)
-    avg_waiting = total_waiting / len(finished_processes) if finished_processes else 0
-    avg_turnaround = total_turnaround / len(finished_processes) if finished_processes else 0
-    
-    print(f"👉 평균 대기 시간 (Avg Waiting Time): {avg_waiting:.2f}")
-    print(f"👉 평균 반환 시간 (Avg Turnaround Time): {avg_turnaround:.2f}")
+    count = len(finished_processes)
+    if count > 0:
+        print(f"평균 대기 시간 : {total_waiting / count:.2f}")
+        print(f"평균 반환 시간 : {total_turnaround / count:.2f}")
+    else:
+        print("완료된 프로세스가 없습니다.")
     print("="*50)
+
+def main():
+    print("---  Mini OS Simulator Booting... ---")
+    
+    # 1. 시나리오 설정
+    jobs = [
+        Process(arrival_time=0, burst_time=10), 
+        Process(arrival_time=1, burst_time=1),  
+        Process(arrival_time=2, burst_time=1)   
+    ]
+    
+    # 2. 스케줄러 선택
+    my_scheduler = FCFS_Scheduler()
+    
+    # 3. 시뮬레이션 실행
+    results = run_simulation(my_scheduler, jobs)
+    
+    # 4. 결과 출력
+    print_report(results)
 
 if __name__ == "__main__":
     main()
