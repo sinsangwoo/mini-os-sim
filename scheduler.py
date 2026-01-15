@@ -28,3 +28,23 @@ class FCFS_Scheduler(Scheduler):
             return None
         
         return self.ready_queue.popleft()
+    
+
+# SJF 스케줄러
+class SJF_Scheduler(Scheduler):
+    # Shortest Job First (최단 작업 우선) 스케줄러.
+    # Ready Queue에 있는 프로세스 중 burst_time이 가장 작은 것을 선택하는 비선점형 스케줄러
+    def get_next_process(self):
+        # 큐가 비었으면 None
+        if not self.ready_queue:
+            return None
+        
+        # 1. 가장 실행 시간이 짧은 프로세스 찾기
+        # min() 함수를 이용해 burst_time이 최소인 객체를 찾습니다.
+        shortest_job = min(self.ready_queue, key=lambda p: p.burst_time)
+        
+        # 2. 큐에서 제거하고 반환
+        # deque에서는 remove()가 O(N)이지만, 시뮬레이터 규모에서는 충분히 빠릅니다.
+        self.ready_queue.remove(shortest_job)
+        
+        return shortest_job

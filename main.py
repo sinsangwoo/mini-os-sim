@@ -1,6 +1,6 @@
 import time
 from process import Process, ProcessState
-from scheduler import FCFS_Scheduler
+from scheduler import FCFS_Scheduler, SJF_Scheduler
 from cpu import CPU
 
 def run_simulation(scheduler, job_list, max_time=20):
@@ -61,9 +61,7 @@ def run_simulation(scheduler, job_list, max_time=20):
     return finished_processes
 
 def print_report(finished_processes):
-    """
-    시뮬레이션 결과를 표 형태로 출력합니다.
-    """
+    # 시뮬레이션 결과를 표 형태로 출력함
     print("\n" + "="*50)
     print("[Final Report] 시뮬레이션 결과 통계")
     print("="*50)
@@ -90,23 +88,31 @@ def print_report(finished_processes):
     print("="*50)
 
 def main():
-    print("---  Mini OS Simulator Booting... ---")
+    print("--- 🖥️  Mini OS Simulator: SJF vs FCFS ---")
     
-    # 1. 시나리오 설정
-    jobs = [
-        Process(arrival_time=0, burst_time=10), 
-        Process(arrival_time=1, burst_time=1),  
-        Process(arrival_time=2, burst_time=1)   
+    # [비교 시나리오: Convoy Effect]
+    # P1(10초)이 먼저 도착했지만, SJF라면 P2(1초), P3(1초)가 먼저 실행되어야 함...
+    # 하지만! SJF는 '비선점형'입니다. 
+    # P1이 0초에 도착해서 CPU를 잡으면, P2가 1초에 도착해도 뺏을 수 없습니다.
+    # 그래서 시나리오를 조금 바꿉니다. "동시에 도착"했다고 가정합시다.
+    
+    jobs_data = [
+        (0, 10), # P1: 0초 도착, 10초 실행
+        (0, 1),  # P2: 0초 도착, 1초 실행
+        (0, 1)   # P3: 0초 도착, 1초 실행
     ]
     
-    # 2. 스케줄러 선택
-    my_scheduler = FCFS_Scheduler()
+    # 1. FCFS 실행 (P1 -> P2 -> P3 예상)
+    print("\n🔵 [Experiment 1] FCFS Scheduler")
+    jobs_fcfs = [Process(at, bt) for at, bt in jobs_data]
+    results_fcfs = run_simulation(FCFS_Scheduler(), jobs_fcfs)
+    print_report(results_fcfs)
     
-    # 3. 시뮬레이션 실행
-    results = run_simulation(my_scheduler, jobs)
-    
-    # 4. 결과 출력
-    print_report(results)
+    # 2. SJF 실행 (P2 -> P3 -> P1 또는 P3 -> P2 -> P1 예상)
+    print("\n🟠 [Experiment 2] SJF Scheduler")
+    jobs_sjf = [Process(at, bt) for at, bt in jobs_data]
+    results_sjf = run_simulation(SJF_Scheduler(), jobs_sjf)
+    print_report(results_sjf)
 
 if __name__ == "__main__":
     main()
