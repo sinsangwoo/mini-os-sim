@@ -88,28 +88,20 @@ def print_report(finished_processes):
     print("="*50)
 
 def main():
-    print("--- 🖥️  Mini OS Simulator: SJF vs FCFS ---")
+    print("--- Mini OS Simulator: SJF Non-Preemptive Test ---")
     
-    # [비교 시나리오: Convoy Effect]
-    # P1(10초)이 먼저 도착했지만, SJF라면 P2(1초), P3(1초)가 먼저 실행되어야 함...
-    # 하지만! SJF는 '비선점형'입니다. 
-    # P1이 0초에 도착해서 CPU를 잡으면, P2가 1초에 도착해도 뺏을 수 없습니다.
-    # 그래서 시나리오를 조금 바꿉니다. "동시에 도착"했다고 가정합시다.
-    
+    # [시나리오: 엇갈린 도착]
+    # P1: 0초 도착, 10초 실행 (먼저 옴)
+    # P2: 1초 도착, 1초 실행 (나중에 왔지만 아주 짧음)
+    # P3: 2초 도착, 1초 실행
     jobs_data = [
-        (0, 10), # P1: 0초 도착, 10초 실행
-        (0, 1),  # P2: 0초 도착, 1초 실행
-        (0, 1)   # P3: 0초 도착, 1초 실행
+        (0, 10), 
+        (1, 1),  
+        (2, 1)   
     ]
     
-    # 1. FCFS 실행 (P1 -> P2 -> P3 예상)
-    print("\n🔵 [Experiment 1] FCFS Scheduler")
-    jobs_fcfs = [Process(at, bt) for at, bt in jobs_data]
-    results_fcfs = run_simulation(FCFS_Scheduler(), jobs_fcfs)
-    print_report(results_fcfs)
-    
-    # 2. SJF 실행 (P2 -> P3 -> P1 또는 P3 -> P2 -> P1 예상)
-    print("\n🟠 [Experiment 2] SJF Scheduler")
+    # 1. SJF 실행
+    print("\n[Experiment] SJF Scheduler (With different arrival times)")
     jobs_sjf = [Process(at, bt) for at, bt in jobs_data]
     results_sjf = run_simulation(SJF_Scheduler(), jobs_sjf)
     print_report(results_sjf)
