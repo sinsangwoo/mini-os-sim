@@ -88,23 +88,25 @@ def print_report(finished_processes):
     print("="*50)
 
 def main():
-    print("--- Mini OS Simulator: SJF Non-Preemptive Test ---")
+    print("--- 🖥️  Mini OS Simulator: SJF Starvation Test ---")
     
-    # [시나리오: 엇갈린 도착]
-    # P1: 0초 도착, 10초 실행 (먼저 옴)
-    # P2: 1초 도착, 1초 실행 (나중에 왔지만 아주 짧음)
-    # P3: 2초 도착, 1초 실행
-    jobs_data = [
-        (0, 10), 
-        (1, 1),  
-        (2, 1)   
-    ]
+    # [시나리오: 기아 현상]
+    jobs = []
+
     
-    # 1. SJF 실행
-    print("\n[Experiment] SJF Scheduler (With different arrival times)")
-    jobs_sjf = [Process(at, bt) for at, bt in jobs_data]
-    results_sjf = run_simulation(SJF_Scheduler(), jobs_sjf)
-    print_report(results_sjf)
+    jobs.append(Process(arrival_time=0, burst_time=1)) # P_System (미끼)
+    jobs.append(Process(arrival_time=2, burst_time=100)) # P_Long (피해자)
+
+    # 1초부터 9초까지 매초 짧은 놈 투입
+    for i in range(1, 10):
+        jobs.append(Process(arrival_time=i, burst_time=1))
+
+    # 3. SJF 실행
+    print("\n🟠 [Experiment] SJF Starvation")
+    # run_simulation은 내부적으로 Process 객체를 새로 만들지 않고 jobs 리스트를 씀.
+    # 위에서 이미 객체로 만들었으니 그대로 넘김.
+    results = run_simulation(SJF_Scheduler(), jobs, max_time=30)
+    print_report(results)
 
 if __name__ == "__main__":
     main()
