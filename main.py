@@ -1,6 +1,6 @@
 import time
 from process import Process, ProcessState
-from scheduler import FCFS_Scheduler, SJF_Scheduler
+from scheduler import FCFS_Scheduler, SJF_Scheduler, RoundRobin_Scheduler
 from cpu import CPU
 
 def run_simulation(scheduler, job_list, max_time=20):
@@ -88,24 +88,25 @@ def print_report(finished_processes):
     print("="*50)
 
 def main():
-    print("--- 🖥️  Mini OS Simulator: SJF Starvation Test ---")
+    print("--- 🖥️  Mini OS Simulator: Round Robin Setup ---")
     
-    # [시나리오: 기아 현상]
-    jobs = []
-
+    # [시나리오]
+    # P1(10초), P2(10초)
+    # RR이 작동하면 서로 번갈아가며 실행되어야 함.
+    jobs = [
+        Process(arrival_time=0, burst_time=10),
+        Process(arrival_time=0, burst_time=10)
+    ]
     
-    jobs.append(Process(arrival_time=0, burst_time=1)) # P_System (미끼)
-    jobs.append(Process(arrival_time=2, burst_time=100)) # P_Long (피해자)
-
-    # 1초부터 9초까지 매초 짧은 놈 투입
-    for i in range(1, 10):
-        jobs.append(Process(arrival_time=i, burst_time=1))
-
-    # 3. SJF 실행
-    print("\n🟠 [Experiment] SJF Starvation")
-    # run_simulation은 내부적으로 Process 객체를 새로 만들지 않고 jobs 리스트를 씀.
-    # 위에서 이미 객체로 만들었으니 그대로 넘김.
-    results = run_simulation(SJF_Scheduler(), jobs, max_time=30)
+    # 타임 퀀텀을 2초로 설정
+    time_quantum = 2
+    rr_scheduler = RoundRobin_Scheduler(time_quantum)
+    
+    print(f"\n[Experiment] Round Robin (Time Quantum: {time_quantum})")
+    print("(아직 선점 로직 미구현으로 FCFS처럼 동작할 것임)")
+    
+    # 실행
+    results = run_simulation(rr_scheduler, jobs, max_time=30)
     print_report(results)
 
 if __name__ == "__main__":

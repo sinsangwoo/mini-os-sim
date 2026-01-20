@@ -173,3 +173,12 @@ return f"Remaining time: {self.remaining_time:>2}]"
 * **깨달음:** 
     1. 평가 지표에서, 평가 시스템이 만드는 edge case를 항상 조심해야 한다.
     2. SJF의 기아 현상은 단순히 "늦게 실행된다"가 아니라, **"시스템의 통계마저 왜곡할 수 있다"**는 점에서 더 무섭다.
+
+## 📅 24일 차: 라운드 로빈(RR) 기초
+
+### 🎯 오늘의 목표
+1. `RoundRobin_Scheduler` 클래스 생성 및 `time_quantum` 설정.
+2. 선점 로직이 없을 때 RR이 FCFS와 동일하게 동작함을 확인.
+
+### 📝 배운 점 (TIL)
+* **RR의 구조:** RR은 스케줄러 자체의 알고리즘보다, 커널(Main Loop)이 시간을 재고 강제로 뺏는(Preemption) 로직이 핵심이다.
