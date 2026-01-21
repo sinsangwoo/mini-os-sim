@@ -182,3 +182,14 @@ return f"Remaining time: {self.remaining_time:>2}]"
 
 ### 📝 배운 점 (TIL)
 * **RR의 구조:** RR은 스케줄러 자체의 알고리즘보다, 커널(Main Loop)이 시간을 재고 강제로 뺏는(Preemption) 로직이 핵심이다.
+
+## 📅 25일 차: 라운드 로빈 선점(Preemption) 구현
+
+### 🎯 오늘의 목표
+1. `CPU` 클래스에 현재 버스트 시간을 세는 `cpu_burst_counter` 추가.
+2. `run_simulation`에서 `isinstance`를 사용해 RR 스케줄러일 때만 타임 아웃 로직 적용.
+3. 타임 아웃 시 `RUNNING -> READY`로 상태 변경 후 다시 큐에 넣기.
+
+### 📝 배운 점 (TIL)
+* **Preemption의 원리:** 하드웨어(Timer)와 OS(Scheduler)가 합작하여 독점을 막는 과정을 코드로 구현했다. 
+* **isinstance:** 파이썬에서 객체의 타입을 확인하여 특정 스케줄러일 때만 동작하게 하는 분기 처리가 유용했다.

@@ -8,6 +8,9 @@ class CPU:
         
         # CPU 내부 시계 (총 실행된 틱 수)
         self.time = 0 
+        
+        # CPU 버스트 카운터 초기화
+        self.cpu_burst_counter = 0 
 
     # CPU가 현재 일하고 있는지 확인하는 함수. 
     def is_busy(self):
@@ -47,6 +50,9 @@ class CPU:
         
         # CPU 시간도 흐름
         self.time += 1
+
+        # [25일 차 추가] 1틱 실행했으니 카운터 증가
+        self.cpu_burst_counter += 1
         
         # 로그 출력 (너무 자주 찍히면 시끄러우니 필요할 때만 주석 해제)
         # print(f" [CPU] PID {self.current_process.pid} 실행 중... (PC: {self.current_process.registers['PC']})")

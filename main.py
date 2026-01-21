@@ -38,14 +38,34 @@ def run_simulation(scheduler, job_list, max_time=20):
         if cpu.is_busy():
             cpu.run()
             current = cpu.current_process
-            print(f"    [Run] PID {current.pid} 실행 중 | RT: {current.remaining_time}")
             
+            # (로그 출력: 1틱 실행 후)
+            # RR일 때는 퀀텀 정보도 같이 보여주면 좋음 (선택 사항)
+            print(f"   ⚙️  [Run] PID {current.pid} 실행 중 | RT: {current.remaining_time} | Burst: {cpu.cpu_burst_counter}")
+            
+            # 3-1. 종료 검사 (우선순위 1등, 일 다 했으면 나가는 게 맞음)
             if current.remaining_time == 0:
-                print(f"   [Done] PID {current.pid} 종료!")
+                print(f"   🎉 [Done] PID {current.pid} 종료!")
                 current.change_state(ProcessState.TERMINATED)
                 current.turnaround_time = (global_time + 1) - current.arrival_time
                 finished_processes.append(current)
                 cpu.current_process = None 
+            
+            # 3-2. [25일 차 핵심] 타임 퀀텀 초과 검사 (Preemption)
+            # 스케줄러가 RR이고, 현재 프로세스가 퀀텀만큼 실행했다면?
+            elif isinstance(scheduler, RoundRobin_Scheduler):
+                if cpu.cpu_burst_counter >= scheduler.time_quantum:
+                    # 쫓겨나는 로그
+                    print(f"   ⏱️ [Timeout] PID {current.pid} 타임 퀀텀({scheduler.time_quantum}) 초과! -> 강제 방출")
+                    
+                    # 1. 상태 변경 (Running -> Ready)
+                    current.change_state(ProcessState.READY)
+                    
+                    # 2. 큐의 맨 뒤로 다시 줄 서기
+                    scheduler.add_process(current)
+                    
+                    # 3. CPU 비우기 (다음 루프에서 스케줄러가 새 프로세스를 올림)
+                    cpu.current_process = None 
 
         # 4. [Aging] 대기 시간 누적
         for p in scheduler.ready_queue:
