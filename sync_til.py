@@ -4,7 +4,7 @@ import re
 
 # 경로 설정 
 DEV_LOG = Path("DEV_log.md")
-TIL_ROOT = Path("https://github.com/sinsangwoo/TIL")
+TIL_ROOT = Path("TIL")
 
 today = datetime.now().strftime("%Y-%m-%d")
 year = today[:4]
