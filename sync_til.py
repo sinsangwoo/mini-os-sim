@@ -2,37 +2,35 @@ from datetime import datetime
 from pathlib import Path
 import re
 
-# 경로 설정 
+# 경로 설정
 DEV_LOG = Path("DEV_log.md")
 TIL_ROOT = Path("TIL")
 
+# 오늘 날짜 (2026-01-22)
 today = datetime.now().strftime("%Y-%m-%d")
-year = today[:4]
-month = today[5:7]
+year, month, _ = today.split('-')
 
+# 저장할 폴더 만들기
 til_dir = TIL_ROOT / year / month
 til_dir.mkdir(parents=True, exist_ok=True)
-
 til_file = til_dir / f"{today}.md"
 
-# dev_log.md에서 오늘 섹션만 추출
+# 1. dev_log.md 내용 읽기
 text = DEV_LOG.read_text(encoding="utf-8")
 
-pattern = rf"## 📅 .*?{today[-2:]}일 차:(.*?)(?=## 📅|\Z)"
-match = re.search(pattern, text, re.S)
+# 2. '## 📅'를 기준으로 문서 나누기 (가장 똑똑한 방법)
+# 이 방법은 숫자가 몇 일차인지 상관없이 마지막 덩어리만 쏙 빼옵니다.
+sections = re.split(r'\n(?=## 📅)', text)
+last_section = sections[-1].strip() # 맨 마지막 섹션 가져오기
 
-if not match:
-    print("❌ 오늘 로그 섹션을 찾지 못함")
-    exit()
-
-section = match.group(0).strip()
-
+# 3. 저장할 내용 구성
 content = f"""# {today}
 
 - [Project] Python mini OS simulator
 
-{section}
+{last_section}
 """
 
+# 4. 파일 쓰기
 til_file.write_text(content, encoding="utf-8")
 print(f"✅ TIL 업데이트 완료: {til_file}")
