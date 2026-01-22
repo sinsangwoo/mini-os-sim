@@ -37,11 +37,16 @@ def run_simulation(scheduler, job_list, max_time=20):
         # 3. [Execution]
         if cpu.is_busy():
             cpu.run()
-            current = cpu.current_process
             
-            # (로그 출력: 1틱 실행 후)
-            # RR일 때는 퀀텀 정보도 같이 보여주면 좋음 (선택 사항)
-            print(f"   ⚙️  [Run] PID {current.pid} 실행 중 | RT: {current.remaining_time} | Burst: {cpu.cpu_burst_counter}")
+            # [26일 차 추가] 교체 중일 때는 아무것도 하지 말고 넘어감
+            if cpu.is_switching:
+                # print("   ⏳ [Overhead] 문맥 교환 진행 중...") 
+                continue 
+            
+            # 교체가 끝나고 실제로 프로세스가 있을 때만 아래 로직 수행
+            current = cpu.current_process
+            if current:
+                print(f"   ⚙️  [Run] PID {current.pid} 실행 중 | RT: {current.remaining_time} | Burst: {cpu.cpu_burst_counter}")
             
             # 3-1. 종료 검사 (우선순위 1등, 일 다 했으면 나가는 게 맞음)
             if current.remaining_time == 0:
