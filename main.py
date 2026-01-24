@@ -15,6 +15,7 @@ def run_simulation(scheduler, job_list, max_time=20):
     pending_jobs = list(job_list)
     
     while global_time < max_time:
+        # 순서 변경 실험: Execution을 먼저 하고 Arrival을 나중에 하면?
         print(f"\n[Time: {global_time:>2}] {'='*30}") 
 
         # 1. [Arrival]
@@ -113,25 +114,26 @@ def print_report(finished_processes):
     print("="*50)
 
 def main():
-    print("--- 🖥️  Mini OS Simulator: Round Robin Setup ---")
+    print("--- Mini OS Simulator: RR Order Test ---")
     
     # [시나리오]
-    # P1(10초), P2(10초)
-    # RR이 작동하면 서로 번갈아가며 실행되어야 함.
-    jobs = [
-        Process(arrival_time=0, burst_time=10),
-        Process(arrival_time=0, burst_time=10)
+    # P1: 0초 도착, 10초 실행 (Quantum 2초 -> 2초에 Timeout 발생)
+    # P2: 2초 도착, 1초 실행 (2초에 Arrival 발생)
+    jobs_data = [
+        (0, 10), 
+        (2, 1)   
     ]
     
-    # 타임 퀀텀을 2초로 설정
     time_quantum = 2
-    rr_scheduler = RoundRobin_Scheduler(time_quantum)
     
-    print(f"\n[Experiment] Round Robin (Time Quantum: {time_quantum})")
-    print("(아직 선점 로직 미구현으로 FCFS처럼 동작할 것임)")
+    print(f"\n[Experiment] RR (Quantum: {time_quantum}) - Current Logic (Arrival First?)")
     
-    # 실행
-    results = run_simulation(rr_scheduler, jobs, max_time=30)
+    # 1. 시뮬레이션 실행
+    jobs_rr = [Process(at, bt) for at, bt in jobs_data]
+    results = run_simulation(RoundRobin_Scheduler(time_quantum), jobs_rr)
+    
+    # 2. 결과 로그 분석 (자동화된 성적표 말고 로그를 눈으로 확인 필요)
+    # Time 2 이후에 누가 먼저 실행되는지 봐야 함.
     print_report(results)
 
 if __name__ == "__main__":
