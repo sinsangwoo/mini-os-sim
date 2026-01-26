@@ -39,19 +39,25 @@ def run_simulation(scheduler, job_list, max_time=20):
         if cpu.is_busy():
             cpu.run()
             
-            # [26일 차 추가] 교체 중일 때는 아무것도 하지 말고 넘어감
+            # 교체 중이면 패스
             if cpu.is_switching:
-                # print("   ⏳ [Overhead] 문맥 교환 진행 중...") 
-                continue 
-            
-            # 교체가 끝나고 실제로 프로세스가 있을 때만 아래 로직 수행
+                continue
+                
             current = cpu.current_process
             if current:
-                print(f"   ⚙️  [Run] PID {current.pid} 실행 중 | RT: {current.remaining_time} | Burst: {cpu.cpu_burst_counter}")
+                # [28일 차 핵심] 처음 실행되는 순간인가?
+                if current.first_run_time == -1:
+                    current.first_run_time = global_time
+                    # 응답 시간 = 처음 실행 시간 - 도착 시간
+                    current.response_time = current.first_run_time - current.arrival_time
+                    # 로그 출력 (선택)
+                    print(f"   [Response] PID {current.pid} 첫 응답! (Response Time: {current.response_time})")
+
+                print(f"   [Run] PID {current.pid} 실행 중 ...")
             
             # 3-1. 종료 검사 (우선순위 1등, 일 다 했으면 나가는 게 맞음)
             if current.remaining_time == 0:
-                print(f"   🎉 [Done] PID {current.pid} 종료!")
+                print(f"   [Done] PID {current.pid} 종료!")
                 current.change_state(ProcessState.TERMINATED)
                 current.turnaround_time = (global_time + 1) - current.arrival_time
                 finished_processes.append(current)
@@ -62,7 +68,7 @@ def run_simulation(scheduler, job_list, max_time=20):
             elif isinstance(scheduler, RoundRobin_Scheduler):
                 if cpu.cpu_burst_counter >= scheduler.time_quantum:
                     # 쫓겨나는 로그
-                    print(f"   ⏱️ [Timeout] PID {current.pid} 타임 퀀텀({scheduler.time_quantum}) 초과! -> 강제 방출")
+                    print(f"   [Timeout] PID {current.pid} 타임 퀀텀({scheduler.time_quantum}) 초과! -> 강제 방출")
                     
                     # 1. 상태 변경 (Running -> Ready)
                     current.change_state(ProcessState.READY)
@@ -87,31 +93,34 @@ def run_simulation(scheduler, job_list, max_time=20):
     return finished_processes
 
 def print_report(finished_processes):
-    # 시뮬레이션 결과를 표 형태로 출력함
-    print("\n" + "="*50)
+    print("\n" + "="*65) # 폭을 좀 넓힘
     print("[Final Report] 시뮬레이션 결과 통계")
-    print("="*50)
-    print(f"{'PID':<5} | {'Arrival':<8} | {'Burst':<6} | {'Waiting':<8} | {'Turnaround':<10}")
-    print("-" * 50)
+    print("="*65)
+    # Response 항목 추가
+    print(f"{'PID':<5} | {'Arrival':<8} | {'Burst':<6} | {'Waiting':<8} | {'Turnaround':<10} | {'Response':<8}")
+    print("-" * 65)
     
     total_waiting = 0
     total_turnaround = 0
+    total_response = 0 # 추가
     
     finished_processes.sort(key=lambda x: x.pid)
     
     for p in finished_processes:
-        print(f"{p.pid:<5} | {p.arrival_time:<8} | {p.burst_time:<6} | {p.waiting_time:<8} | {p.turnaround_time:<10}")
+        print(f"{p.pid:<5} | {p.arrival_time:<8} | {p.burst_time:<6} | {p.waiting_time:<8} | {p.turnaround_time:<10} | {p.response_time:<8}")
         total_waiting += p.waiting_time
         total_turnaround += p.turnaround_time
+        total_response += p.response_time # 추가
         
-    print("-" * 50)
+    print("-" * 65)
     count = len(finished_processes)
     if count > 0:
         print(f"평균 대기 시간 : {total_waiting / count:.2f}")
         print(f"평균 반환 시간 : {total_turnaround / count:.2f}")
+        print(f"평균 응답 시간 : {total_response / count:.2f}") # 추가
     else:
         print("완료된 프로세스가 없습니다.")
-    print("="*50)
+    print("="*65)
 
 def main():
     print("--- Mini OS Simulator: RR Order Test ---")

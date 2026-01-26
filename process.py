@@ -33,6 +33,10 @@ class Process:
         self.waiting_time = 0
         self.turnaround_time = 0 
 
+        # [28일 차 추가] 응답 시간 관련 변수
+        self.response_time = -1  # 아직 실행 안 됨을 표시 (-1)
+        self.first_run_time = -1 # 처음 CPU 잡은 시간
+
         # [리팩토링] 생성 시 로그는 제거하거나, 필요하다면 한 줄로 요약해서 디버그 모드일 때만 출력하는 것이 좋음
         # 일단은 조용히 생성되도록 함
 
@@ -49,15 +53,15 @@ class Process:
         
         # 유효성 검사
         if old_state == ProcessState.WAITING and new_state != ProcessState.READY:
-            print(f"⚠️ [PID:{self.pid}] Error: WAITING -> READY만 가능합니다.")
+            print(f"[PID:{self.pid}] Error: WAITING -> READY만 가능합니다.")
             return
         
         if new_state == ProcessState.RUNNING and old_state != ProcessState.READY:
-            print(f"⚠️ [PID:{self.pid}] Error: RUNNING은 READY에서만 갈 수 있습니다.")
+            print(f"[PID:{self.pid}] Error: RUNNING은 READY에서만 갈 수 있습니다.")
             return
         
         if old_state == ProcessState.TERMINATED:
-            print(f"⚠️ [PID:{self.pid}] Error: 종료된 프로세스는 변경 불가합니다.")
+            print(f"[PID:{self.pid}] Error: 종료된 프로세스는 변경 불가합니다.")
             return
         
         self.state = new_state

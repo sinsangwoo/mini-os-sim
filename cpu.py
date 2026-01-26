@@ -43,13 +43,13 @@ class CPU:
         self.is_switching = True
         self.switch_counter = self.context_switch_time
         
-        print(f"   💾 [Switch] Context Change Start: PID {prev_pid} -> PID {process.pid} (Overhead: {self.context_switch_time} tick)")
+        print(f"   [Switch] Context Change Start: PID {prev_pid} -> PID {process.pid} (Overhead: {self.context_switch_time} tick)") 
 
         # 새로운 프로세스를 CPU에 올림 
         self.current_process = process
         
         # 문맥 교환 로그 출력. 아무것도 못하는 오버헤드 상태가 발생하는 지점
-        print(f"   💾 [Switch] Context Change: PID {prev_pid} -> PID {process.pid}")
+        print(f"   [Switch] Context Change: PID {prev_pid} -> PID {process.pid}")
 
     
     # CPU를 1 틱 실행하는 메서드
@@ -63,7 +63,7 @@ class CPU:
                 self.current_process = self.next_process_candidate
                 self.next_process_candidate = None
                 self.cpu_burst_counter = 0 # 카운터 초기화
-                print(f"   ✅ [Switch] Context Change Complete! PID {self.current_process.pid} is now Running.")
+                print(f"   [Switch] Context Change Complete! PID {self.current_process.pid} is now Running.")
             return # 이번 틱은 교체하느라 썼으니 리턴
 
         # 2. 실행할 프로세스가 없으면
