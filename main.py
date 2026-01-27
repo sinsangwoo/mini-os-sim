@@ -1,6 +1,6 @@
 import time
 from process import Process, ProcessState
-from scheduler import FCFS_Scheduler, SJF_Scheduler, RoundRobin_Scheduler
+from scheduler import FCFS_Scheduler, SJF_Scheduler, RoundRobin_Scheduler, Priority_Scheduler
 from cpu import CPU
 
 def run_simulation(scheduler, job_list, max_time=20):
@@ -123,26 +123,19 @@ def print_report(finished_processes):
     print("="*65)
 
 def main():
-    print("--- Mini OS Simulator: RR Order Test ---")
+    print("--- 🖥️  Mini OS Simulator: Priority Scheduling Test ---")
     
     # [시나리오]
-    # P1: 0초 도착, 10초 실행 (Quantum 2초 -> 2초에 Timeout 발생)
-    # P2: 2초 도착, 1초 실행 (2초에 Arrival 발생)
-    jobs_data = [
-        (0, 10), 
-        (2, 1)   
+    # P1: 먼저 등록됐지만 우선순위가 낮음 (5)
+    # P2: 나중에 등록됐지만 우선순위가 높음 (1)
+    jobs = [
+        Process(arrival_time=0, burst_time=5, priority=5),
+        Process(arrival_time=0, burst_time=5, priority=1)
     ]
     
-    time_quantum = 2
-    
-    print(f"\n[Experiment] RR (Quantum: {time_quantum}) - Current Logic (Arrival First?)")
-    
-    # 1. 시뮬레이션 실행
-    jobs_rr = [Process(at, bt) for at, bt in jobs_data]
-    results = run_simulation(RoundRobin_Scheduler(time_quantum), jobs_rr)
-    
-    # 2. 결과 로그 분석 (자동화된 성적표 말고 로그를 눈으로 확인 필요)
-    # Time 2 이후에 누가 먼저 실행되는지 봐야 함.
+    # Priority Scheduler 실행
+    print("\n🟣 [Experiment] Priority Scheduler (Lower number = Higher priority)")
+    results = run_simulation(Priority_Scheduler(), jobs)
     print_report(results)
 
 if __name__ == "__main__":

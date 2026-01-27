@@ -57,3 +57,18 @@ class RoundRobin_Scheduler(Scheduler):
         if not self.ready_queue:
             return None
         return self.ready_queue.popleft()
+    
+
+# 우선순위 기반 스케줄러. 준비 큐에서 우선순위가 가장 높은 프로세스를 선택하는 선점형 스케줄러
+class Priority_Scheduler(Scheduler):
+    def get_next_process(self):
+        if not self.ready_queue:
+            return None
+        
+        # 1. 우선순위가 가장 높은(숫자가 작은) 프로세스 찾기
+        highest_prio_job = min(self.ready_queue, key=lambda p: p.priority)
+        
+        # 2. 큐에서 제거하고 반환
+        self.ready_queue.remove(highest_prio_job)
+        
+        return highest_prio_job

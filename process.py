@@ -10,7 +10,7 @@ class ProcessState(Enum):
 class Process:
     _pid_counter = 1  
     
-    def __init__(self, arrival_time, burst_time): 
+    def __init__(self, arrival_time, burst_time, priority=0):
         
         # PID 자동 발급 및 카운터 증가
         self.pid = Process._pid_counter
@@ -36,9 +36,7 @@ class Process:
         # [28일 차 추가] 응답 시간 관련 변수
         self.response_time = -1  # 아직 실행 안 됨을 표시 (-1)
         self.first_run_time = -1 # 처음 CPU 잡은 시간
-
-        # [리팩토링] 생성 시 로그는 제거하거나, 필요하다면 한 줄로 요약해서 디버그 모드일 때만 출력하는 것이 좋음
-        # 일단은 조용히 생성되도록 함
+        self.priority = priority
 
     def tick(self):
         if self.remaining_time > 0:
@@ -72,6 +70,7 @@ class Process:
     def __repr__(self):
         state_str = f"{self.state.name:<10}" 
         return (f"[PID:{self.pid:<2} | {state_str} | "
+            f"Prio:{self.priority:>1} | "
             f"AT:{self.arrival_time:>2} | "
             f"BT:{self.burst_time:>2} | "
             f"RT:{self.remaining_time:>2}]")
