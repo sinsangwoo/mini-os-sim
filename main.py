@@ -123,20 +123,37 @@ def print_report(finished_processes):
     print("="*65)
 
 def main():
-    print("--- 🖥️  Mini OS Simulator: Priority Scheduling Test ---")
+    print("--- 🖥️  Mini OS Simulator: Final Showcase ---")
     
-    # [시나리오]
-    # P1: 먼저 등록됐지만 우선순위가 낮음 (5)
-    # P2: 나중에 등록됐지만 우선순위가 높음 (1)
-    jobs = [
-        Process(arrival_time=0, burst_time=5, priority=5),
-        Process(arrival_time=0, burst_time=5, priority=1)
+    # [공통 시나리오]
+    # P1: 0초 도착, 10초, Prio 3
+    # P2: 1초 도착, 1초, Prio 1 (긴급)
+    # P3: 2초 도착, 2초, Prio 2
+    jobs_data = [
+        (0, 10, 3), 
+        (1, 1, 1),  
+        (2, 2, 2)   
     ]
     
-    # Priority Scheduler 실행
-    print("\n🟣 [Experiment] Priority Scheduler (Lower number = Higher priority)")
-    results = run_simulation(Priority_Scheduler(), jobs)
-    print_report(results)
+    # 1. FCFS
+    print("\n🔵 [1] FCFS Scheduler")
+    jobs = [Process(at, bt, pr) for at, bt, pr in jobs_data]
+    print_report(run_simulation(FCFS_Scheduler(), jobs))
+    
+    # 2. SJF
+    print("\n🟠 [2] SJF Scheduler")
+    jobs = [Process(at, bt, pr) for at, bt, pr in jobs_data]
+    print_report(run_simulation(SJF_Scheduler(), jobs))
+    
+    # 3. RR (Quantum 2)
+    print("\n🟢 [3] Round Robin (Q=2)")
+    jobs = [Process(at, bt, pr) for at, bt, pr in jobs_data]
+    print_report(run_simulation(RoundRobin_Scheduler(2), jobs))
+    
+    # 4. Priority
+    print("\n🟣 [4] Priority Scheduler")
+    jobs = [Process(at, bt, pr) for at, bt, pr in jobs_data]
+    print_report(run_simulation(Priority_Scheduler(), jobs))
 
 if __name__ == "__main__":
     main()
