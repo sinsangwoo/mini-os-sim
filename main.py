@@ -2,6 +2,7 @@ import time
 from process import Process, ProcessState
 from scheduler import FCFS_Scheduler, SJF_Scheduler, RoundRobin_Scheduler, Priority_Scheduler
 from cpu import CPU
+from memory import Memory
 
 def run_simulation(scheduler, job_list, max_time=20):
     # 주어진 스케줄러와 작업 목록으로 시뮬레이션을 수행하고 결과를 반환함
@@ -123,37 +124,24 @@ def print_report(finished_processes):
     print("="*65)
 
 def main():
-    print("--- 🖥️  Mini OS Simulator: Final Showcase ---")
+    print("--- 🖥️  Mini OS Simulator: Memory Test ---")
     
-    # [공통 시나리오]
-    # P1: 0초 도착, 10초, Prio 3
-    # P2: 1초 도착, 1초, Prio 1 (긴급)
-    # P3: 2초 도착, 2초, Prio 2
-    jobs_data = [
-        (0, 10, 3), 
-        (1, 1, 1),  
-        (2, 2, 2)   
-    ]
+    # 1. 메모리 장착 (1KB)
+    ram = Memory(1024)
     
-    # 1. FCFS
-    print("\n🔵 [1] FCFS Scheduler")
-    jobs = [Process(at, bt, pr) for at, bt, pr in jobs_data]
-    print_report(run_simulation(FCFS_Scheduler(), jobs))
+    # 2. 쓰기 테스트 (0번지에 99 저장)
+    print("\n[Test 1] 0번지에 데이터 99 쓰기")
+    ram.write(0, 99)
+    print(ram)
     
-    # 2. SJF
-    print("\n🟠 [2] SJF Scheduler")
-    jobs = [Process(at, bt, pr) for at, bt, pr in jobs_data]
-    print_report(run_simulation(SJF_Scheduler(), jobs))
+    # 3. 읽기 테스트
+    print("\n[Test 2] 0번지 읽기")
+    data = ram.read(0)
+    print(f"   -> 읽은 데이터: {data} (기대값: 99)")
     
-    # 3. RR (Quantum 2)
-    print("\n🟢 [3] Round Robin (Q=2)")
-    jobs = [Process(at, bt, pr) for at, bt, pr in jobs_data]
-    print_report(run_simulation(RoundRobin_Scheduler(2), jobs))
-    
-    # 4. Priority
-    print("\n🟣 [4] Priority Scheduler")
-    jobs = [Process(at, bt, pr) for at, bt, pr in jobs_data]
-    print_report(run_simulation(Priority_Scheduler(), jobs))
+    # 4. 범위 초과 테스트 (에러 처리 확인)
+    print("\n[Test 3] 2000번지 접근 (범위 초과)")
+    ram.read(2000)
 
 if __name__ == "__main__":
     main()
