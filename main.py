@@ -124,24 +124,35 @@ def print_report(finished_processes):
     print("="*65)
 
 def main():
-    print("--- 🖥️  Mini OS Simulator: Memory Test ---")
+    print("--- Mini OS Simulator: Paging Test ---")
     
-    # 1. 메모리 장착 (1KB)
+    # 메모리 생성 (총 256 프레임)
     ram = Memory(1024)
     
-    # 2. 쓰기 테스트 (0번지에 99 저장)
-    print("\n[Test 1] 0번지에 데이터 99 쓰기")
-    ram.write(0, 99)
-    print(ram)
+    # 빈 프레임 요청
+    frame_idx = ram.get_free_frame()
+    print(f"\n[Test 1] 빈 프레임 요청 -> {frame_idx}번 (기대값: 0)")
     
-    # 3. 읽기 테스트
-    print("\n[Test 2] 0번지 읽기")
-    data = ram.read(0)
-    print(f"   -> 읽은 데이터: {data} (기대값: 99)")
+    # PID 1에게 할당
+    if frame_idx != -1:
+        ram.set_frame(frame_idx, pid=1)
+        print(f"   -> Frame {frame_idx}를 PID 1에게 할당함.")
+        
+    # 또 요청
+    frame_idx2 = ram.get_free_frame()
+    print(f"\n[Test 2] 빈 프레임 요청 -> {frame_idx2}번 (기대값: 1)")
     
-    # 4. 범위 초과 테스트 (에러 처리 확인)
-    print("\n[Test 3] 2000번지 접근 (범위 초과)")
-    ram.read(2000)
+    if frame_idx2 != -1:
+        ram.set_frame(frame_idx2, pid=2)
+        print(f"   -> Frame {frame_idx2}를 PID 2에게 할당함.")
+        
+    # 프레임 테이블 상태 확인 (앞부분만)
+    print(f"\n[Status] Frame Table Head: {ram.frames[:5]}")
+
+    # 반납 테스트
+    print(f"\n[Test 3] Frame 0 반납")
+    ram.free_frame(0)
+    print(f"[Status] Frame Table Head: {ram.frames[:5]}")
 
 if __name__ == "__main__":
     main()
