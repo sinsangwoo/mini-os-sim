@@ -67,3 +67,33 @@ class Memory:
     # 메모리 상태를 출력하는 메서드
     def __repr__(self):
         return f"[RAM] Usage: {sum(1 for x in self.ram if x != 0)}/{self.size} bytes used | Head: {self.ram[:20]}..."
+    
+
+# 메모리 관리 유닛(MMU) 시뮬레이션 클래스
+class MMU:
+    def __init__(self, memory):
+        self.memory = memory # 물리 메모리 객체 연결
+
+    # 프로세스가 쓰는 가상 주소를 RAM의 물리 주소로 변환하는 메서드
+    def translate(self, process, virtual_addr):
+        # 가상 주소 분해
+        # VPN = VA / Page_Size (몫)
+        # Offset = VA % Page_Size (나머지)
+        vpn = virtual_addr // Memory.PAGE_SIZE
+        offset = virtual_addr % Memory.PAGE_SIZE
+        
+        # 페이지 테이블 조회 (TLB 역할)
+        if vpn in process.page_table:
+            pfn = process.page_table[vpn]
+            
+            # 물리 주소 계산
+            # PA = (PFN * Page_Size) + Offset
+            physical_addr = (pfn * Memory.PAGE_SIZE) + offset
+            
+            # 로그 출력 (변환 과정 확인)
+            print(f"[MMU] VA {virtual_addr} -> VPN {vpn} -> PFN {pfn} -> PA {physical_addr}")
+            return physical_addr
+        else:
+            # 페이지 폴트(Page Fault) (아직 메모리에 안 올라옴)
+            print(f"[MMU] Page Fault! (VA {virtual_addr}, VPN {vpn} not in PT)")
+            return -1 # 에러 코드

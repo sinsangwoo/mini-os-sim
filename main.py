@@ -2,7 +2,7 @@ import time
 from process import Process, ProcessState
 from scheduler import FCFS_Scheduler, SJF_Scheduler, RoundRobin_Scheduler, Priority_Scheduler
 from cpu import CPU
-from memory import Memory
+from memory import Memory, MMU
 
 def run_simulation(scheduler, job_list, max_time=20):
     # 주어진 스케줄러와 작업 목록으로 시뮬레이션을 수행하고 결과를 반환함
@@ -124,35 +124,39 @@ def print_report(finished_processes):
     print("="*65)
 
 def main():
-    print("--- Mini OS Simulator: Paging Test ---")
+    print("--- 🖥️  Mini OS Simulator: MMU Test ---")
     
-    # 메모리 생성 (총 256 프레임)
+    # 1. 하드웨어 준비
     ram = Memory(1024)
+    mmu = MMU(ram)
     
-    # 빈 프레임 요청
-    frame_idx = ram.get_free_frame()
-    print(f"\n[Test 1] 빈 프레임 요청 -> {frame_idx}번 (기대값: 0)")
+    # 2. 프로세스 생성
+    p1 = Process(0, 10)
     
-    # PID 1에게 할당
-    if frame_idx != -1:
-        ram.set_frame(frame_idx, pid=1)
-        print(f"   -> Frame {frame_idx}를 PID 1에게 할당함.")
-        
-    # 또 요청
-    frame_idx2 = ram.get_free_frame()
-    print(f"\n[Test 2] 빈 프레임 요청 -> {frame_idx2}번 (기대값: 1)")
+    # 3. 수동 매핑 (OS가 해줬다고 가정)
+    # p1의 0번 페이지 -> 실제 5번 프레임 (20~23번지)
+    # p1의 1번 페이지 -> 실제 2번 프레임 (8~11번지)
+    p1.page_table[0] = 5
+    p1.page_table[1] = 2
     
-    if frame_idx2 != -1:
-        ram.set_frame(frame_idx2, pid=2)
-        print(f"   -> Frame {frame_idx2}를 PID 2에게 할당함.")
-        
-    # 프레임 테이블 상태 확인 (앞부분만)
-    print(f"\n[Status] Frame Table Head: {ram.frames[:5]}")
-
-    # 반납 테스트
-    print(f"\n[Test 3] Frame 0 반납")
-    ram.free_frame(0)
-    print(f"[Status] Frame Table Head: {ram.frames[:5]}")
+    print(f"\n[Setup] PID 1 Page Table: {p1.page_table}")
+    
+    # 4. 주소 변환 테스트
+    # Case 1: VA 0번지 (VPN 0, Offset 0) -> PA 20번지 예상
+    pa = mmu.translate(p1, 0)
+    print(f"[Test 1] VA 0 -> PA {pa} (기대값: 20)")
+    
+    # Case 2: VA 2번지 (VPN 0, Offset 2) -> PA 22번지 예상
+    pa = mmu.translate(p1, 2)
+    print(f"[Test 2] VA 2 -> PA {pa} (기대값: 22)")
+    
+    # Case 3: VA 5번지 (VPN 1, Offset 1) -> PA 9번지 예상 (2*4 + 1)
+    pa = mmu.translate(p1, 5)
+    print(f"[Test 3] VA 5 -> PA {pa} (기대값: 9)")
+    
+    # Case 4: VA 100번지 (매핑 안 됨) -> Page Fault 예상
+    pa = mmu.translate(p1, 100)
+    print(f"[Test 4] VA 100 -> PA {pa} (기대값: -1)")
 
 if __name__ == "__main__":
     main()

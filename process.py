@@ -38,6 +38,14 @@ class Process:
         self.first_run_time = -1 # 처음 CPU 잡은 시간
         self.priority = priority
 
+        # 페이지 테이블 초기화 (가상 주소 -> 물리 주소 매핑)
+        self.page_table = {} 
+        
+        # 프로세스 크기 (페이지 개수)
+        # 일단은 모든 프로세스가 4개의 페이지(16바이트)를 쓴다고 가정
+        # (나중에 가변 크기로 확장 가능)
+        self.size_in_pages = 4 
+
     def tick(self):
         if self.remaining_time > 0:
             self.remaining_time -= 1
@@ -65,7 +73,7 @@ class Process:
         self.state = new_state
         
         # 상태 변경 로그 (필요시 활성화)
-        # print(f"[PID: {self.pid}] 상태 변경: {old_state.value} -> {new_state.value}") 
+        print(f"[PID: {self.pid}] 상태 변경: {old_state.value} -> {new_state.value}") 
         
     def __repr__(self):
         state_str = f"{self.state.name:<10}" 
@@ -74,3 +82,4 @@ class Process:
             f"AT:{self.arrival_time:>2} | "
             f"BT:{self.burst_time:>2} | "
             f"RT:{self.remaining_time:>2}]")
+    
