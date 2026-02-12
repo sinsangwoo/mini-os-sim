@@ -1,7 +1,7 @@
 #!/bin/bash
 
 echo "=== 1. Syncing TIL ==="
-python sync_til.py
+py sync_til.py
 
 echo "=== 2. Committing OS Project ==="
 # 메시지 입력받기

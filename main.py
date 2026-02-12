@@ -3,14 +3,21 @@ from process import Process, ProcessState
 from scheduler import FCFS_Scheduler, SJF_Scheduler, RoundRobin_Scheduler, Priority_Scheduler
 from cpu import CPU
 from memory import Memory, MMU
+from memory_manager import MemoryManager
 
 def run_simulation(scheduler, job_list, max_time=20):
     # 주어진 스케줄러와 작업 목록으로 시뮬레이션을 수행하고 결과를 반환함
     print(f"\n시뮬레이션 시작 (Scheduler: {type(scheduler).__name__})")
-    
+    # CPU 준비
     cpu = CPU()
+    # 전역 시간
     global_time = 0
+    # 완료된 프로세스 기록용
     finished_processes = []
+    # 1KB 만큼의 메모리
+    ram = Memory(1024)
+    # 메로리 관리자
+    mm = MemoryManager(ram)
     
     # job_list를 복사해서 사용 (원본 보존)
     pending_jobs = list(job_list)
@@ -24,11 +31,18 @@ def run_simulation(scheduler, job_list, max_time=20):
         # 여기서는 pending_jobs의 복사본을 만들어 순회
         for p in list(pending_jobs): 
             if p.arrival_time == global_time:
-                scheduler.add_process(p)
-                p.change_state(ProcessState.READY)
-                pending_jobs.remove(p)
-                print(f"   [Arrival] PID {p.pid} 도착")
-
+                if mm.allocate(p):
+                    # 성공하면 스케줄러에 등록
+                    scheduler.add_process(p)
+                    p.change_state(ProcessState.READY)
+                    pending_jobs.remove(p)
+                    print(f"   [Arrival] PID {p.pid} 도착 -> Ready Queue 등록")
+                else:
+                    # 실패하면? (OOM)
+                    # 실제 OS는 스왑(Swap)을 쓰거나 OOM Killer를 부르지만,
+                    # 여기선 일단 '대기'시키거나 '버림' 처리.
+                    # 여기서는 '다음 틱에 다시 시도'하도록 놔둠 (pending_jobs에 유지)
+                    print(f"   [Arrival Failed] PID {p.pid} 메모리 부족으로 대기 중...")
         # 2. [Scheduling]
         if not cpu.is_busy():
             next_process = scheduler.get_next_process()
@@ -63,6 +77,7 @@ def run_simulation(scheduler, job_list, max_time=20):
                 current.turnaround_time = (global_time + 1) - current.arrival_time
                 finished_processes.append(current)
                 cpu.current_process = None 
+                mm.deallocate(current)
             
             # 3-2. [25일 차 핵심] 타임 퀀텀 초과 검사 (Preemption)
             # 스케줄러가 RR이고, 현재 프로세스가 퀀텀만큼 실행했다면?
