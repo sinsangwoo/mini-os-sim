@@ -16,7 +16,11 @@ def run_simulation(scheduler, job_list, max_time=20):
     finished_processes = []
     # 1KB 만큼의 메모리
     ram = Memory(1024)
-    # 메로리 관리자
+    # MMU
+    mmu = MMU(ram)
+    # 메모리 관리자
+    cpu = CPU(mmu)
+    # 메모리 관리자 준비
     mm = MemoryManager(ram)
     
     # job_list를 복사해서 사용 (원본 보존)

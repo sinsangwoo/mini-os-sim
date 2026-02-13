@@ -1,13 +1,18 @@
+import random
+
 class CPU:
     # 프로세스를 실제로 실행하는 하드웨어 유닛
     # 한 번에 하나의 프로세스만 실행할 수 있음
     
-    def __init__(self):
+    def __init__(self,mmu):
         # 현재 CPU에 로드된 프로세스
         self.current_process = None 
 
         # CPU가 동작한 전체 시간 (틱 단위)
         self.time = 0 
+
+        # MMU (Memory Management Unit) 참조
+        self.mmu = mmu
 
         # [25일 차 추가] CPU 버스트 타임 측정을 위한 카운터
         self.cpu_burst_counter = 0
@@ -54,11 +59,13 @@ class CPU:
     
     # CPU를 1 틱 실행하는 메서드
     def run(self):
-        # 1. 문맥 교환 중이라면?
+        # 문맥 교환 중이라면?
         if self.is_switching:
+            # 교체 시간 감소
             self.switch_counter -= 1
+            # 교체 시간이 다 되었는지 확인
             if self.switch_counter <= 0:
-                # 교체 완료! 드디어 프로세스 탑승
+                # 교체 완료. 드디어 프로세스 탑승
                 self.is_switching = False
                 self.current_process = self.next_process_candidate
                 self.next_process_candidate = None
@@ -66,11 +73,45 @@ class CPU:
                 print(f"   [Switch] Context Change Complete! PID {self.current_process.pid} is now Running.")
             return # 이번 틱은 교체하느라 썼으니 리턴
 
-        # 2. 실행할 프로세스가 없으면
+        # 실행할 프로세스가 없으면
         if not self.current_process:
             return
 
-        # 3. 정상 실행
+        # 정상 실행
         self.current_process.tick()
         self.time += 1
         self.cpu_burst_counter += 1
+
+        # 메모리 접근 시뮬레이션 (랜덤하게 발생)
+        # 30% 확률로 메모리 읽기/쓰기 명령 수행
+        if random.random() < 0.3:
+            # 가상 주소 생성 (프로세스 크기 내에서 랜덤)
+            # 4페이지 * 4바이트 = 16바이트 공간
+            # 0 ~ 15번지 사이의 가상 주소
+            va = random.randint(0, 15)
+            
+            # 읽기(0) 또는 쓰기(1) 결정
+            op_type = random.choice(["LOAD", "STORE"])
+            
+            if op_type == "LOAD":
+                self.load_instruction(va)
+            else:
+                self.store_instruction(va, random.randint(1, 100))
+    
+    # 메모리 읽기 명령을 수행하는 메서드
+    def load_instruction(self, va):
+        pa = self.mmu.translate(self.current_process, va)
+        if pa != -1:
+            data = self.mmu.memory.read(pa)
+            print(f"      [Mem] LOAD VA:{va} -> PA:{pa} (Data: {data})")
+        else:
+            print(f"      [Fault] LOAD Failed (VA:{va})")
+
+    # 메모리 쓰기 명령을 수행하는 메서드
+    def store_instruction(self, va, data):
+        pa = self.mmu.translate(self.current_process, va)
+        if pa != -1:
+            self.mmu.memory.write(pa, data)
+            print(f"      [Mem] STORE VA:{va} -> PA:{pa} (Data: {data})")
+        else:
+            print(f"      [Fault] STORE Failed (VA:{va})")
