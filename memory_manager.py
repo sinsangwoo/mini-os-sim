@@ -6,7 +6,7 @@ class MemoryManager:
     def __init__(self, memory):
         self.memory = memory # 물리 메모리 객체 (하드웨어)
 
-    # 메모리 할당 메서드
+    # 메모리를 할당하는 메서드. 프로세스가 필요로 하는 페이지 수를 확인하고, 빈 프레임이 충분한지 검사한 후 할당.
     def allocate(self, process):
         # 프로세스가 필요로 하는 페이지 개수 확인
         # (우리는 프로세스마다 크기가 다르다고 가정하고, 일단 burst_time을 크기로 쓰거나 고정 크기로 씀)
@@ -32,7 +32,7 @@ class MemoryManager:
         # 페이지 테이블 매핑 (Mapping)
         # { VPN 0 : PFN A, VPN 1 : PFN B ... }
         for vpn, pfn in enumerate(free_frames):
-            process.page_table[vpn] = pfn
+            process.page_table[vpn] = {'pfn': pfn, 'valid': True}
             
         print(f"[Memory] Allocated {required_pages} frames to PID {process.pid}")
         print(f"   -> Page Table: {process.page_table}")

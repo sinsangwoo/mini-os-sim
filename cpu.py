@@ -98,14 +98,23 @@ class CPU:
             else:
                 self.store_instruction(va, random.randint(1, 100))
     
-    # 메모리 읽기 명령을 수행하는 메서드
+    # 메모리를 읽는 명령을 수행하는 메서드. 가상 주소를 받아서 MMU를 통해 물리 주소로 변환한 후, 메모리에서 데이터를 읽음.
     def load_instruction(self, va):
+        # MMU를 통해 가상 주소를 물리 주소로 변환
         pa = self.mmu.translate(self.current_process, va)
-        if pa != -1:
+        # 변환된 물리 주소가 유효하면 메모리에서 데이터 읽기
+        if pa >= 0: 
+            # 실제 OS라면 여기서 캐시도 확인할 수 있지만, 우리는 단순히 메모리에서 바로 읽는다고 가정
             data = self.mmu.memory.read(pa)
             print(f"      [Mem] LOAD VA:{va} -> PA:{pa} (Data: {data})")
-        else:
-            print(f"      [Fault] LOAD Failed (VA:{va})")
+        # MMU가 -2을 반환하면 페이지 폴트, 가상 주소가 아직 물리 주소에 매핑되지 않았다는 뜻
+        elif pa == -2: 
+            # 실제 OS라면 여기서 핸들러를 호출해서 해결하고 재시도함.
+            print(f"      [OS] Handling Page Fault for PID {self.current_process.pid}...")
+            # (나중에 여기에 핸들러 로직 추가 가능)
+        # MMU가 -1을 반환하면 세그멘테이션 폴트, 가상 주소 자체가 잘못되었다는 뜻
+        else: 
+            print(f"      [OS] Segmentation Fault! Process Killed.")
 
     # 메모리 쓰기 명령을 수행하는 메서드
     def store_instruction(self, va, data):

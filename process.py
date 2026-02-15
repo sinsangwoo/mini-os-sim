@@ -41,10 +41,9 @@ class Process:
         # 페이지 테이블 초기화 (가상 주소 -> 물리 주소 매핑)
         self.page_table = {} 
         
-        # 프로세스 크기 (페이지 개수)
-        # 일단은 모든 프로세스가 4개의 페이지(16바이트)를 쓴다고 가정
-        # (나중에 가변 크기로 확장 가능)
-        self.size_in_pages = 4 
+        # 예시로 4페이지 할당 (페이지 번호 0~3)
+        for i in range(4): # 4페이지 가정
+            self.page_table[i] = {'pfn': -1, 'valid': False} 
 
     def tick(self):
         if self.remaining_time > 0:

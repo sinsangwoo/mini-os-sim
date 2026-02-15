@@ -82,18 +82,29 @@ class MMU:
         vpn = virtual_addr // Memory.PAGE_SIZE
         offset = virtual_addr % Memory.PAGE_SIZE
         
-        # 페이지 테이블 조회 (TLB 역할)
+        # 만약 해당 VPN이 프로세스의 페이지 테이블에 존재한다면
         if vpn in process.page_table:
-            pfn = process.page_table[vpn]
-            
-            # 물리 주소 계산
-            # PA = (PFN * Page_Size) + Offset
-            physical_addr = (pfn * Memory.PAGE_SIZE) + offset
-            
-            # 로그 출력 (변환 과정 확인)
-            print(f"[MMU] VA {virtual_addr} -> VPN {vpn} -> PFN {pfn} -> PA {physical_addr}")
-            return physical_addr
+
+            # 프로세스의 페이지 테이블에서 해당하는 VPN의 엔트리를 가져옴
+            entry = process.page_table[vpn]
+
+            # 만약 페이지가 메모리에 적재되어 있다면 (valid bit가 True)
+            if entry['valid']:
+                print(f"--- 디버깅 시작 ---")
+                print(f"현재 접근하려는 vpn: {vpn}")
+                print(f"가져온 entry의 값: {entry}")
+                print(f"page_table 전체 상태: {process.page_table}")
+                # 실제 물리적 페이지 프레임 번호(PFN)를 가져옴
+                pfn = entry['pfn']
+                # 물리 주소 = (PFN * 페이지 크기) + 오프셋
+                physical_addr = (pfn * Memory.PAGE_SIZE) + offset
+                # 주소 변환 해주고
+                return physical_addr
+            else:
+                # 페이지는 존재하지만 메모리에 없음 (Page Fault)
+                print(f"[MMU] Page Fault! (VA {virtual_addr}, VPN {vpn} is Invalid)")
+                return -2 # Fault 코드
         else:
-            # 페이지 폴트(Page Fault) (아직 메모리에 안 올라옴)
-            print(f"[MMU] Page Fault! (VA {virtual_addr}, VPN {vpn} not in PT)")
-            return -1 # 에러 코드
+            # 아예 없는 페이지 (Segmentation Fault)
+            print(f"[MMU] Seg Fault! (VA {virtual_addr}, VPN {vpn} Out of Range)")
+            return -1 # Error 코드

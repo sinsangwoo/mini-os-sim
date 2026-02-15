@@ -145,18 +145,12 @@ def print_report(finished_processes):
 def main():
     print("--- 🖥️  Mini OS Simulator: MMU Test ---")
     
-    # 1. 하드웨어 준비
+    # 하드웨어 준비
     ram = Memory(1024)
     mmu = MMU(ram)
     
-    # 2. 프로세스 생성
+    # 프로세스 생성
     p1 = Process(0, 10)
-    
-    # 3. 수동 매핑 (OS가 해줬다고 가정)
-    # p1의 0번 페이지 -> 실제 5번 프레임 (20~23번지)
-    # p1의 1번 페이지 -> 실제 2번 프레임 (8~11번지)
-    p1.page_table[0] = 5
-    p1.page_table[1] = 2
     
     print(f"\n[Setup] PID 1 Page Table: {p1.page_table}")
     
