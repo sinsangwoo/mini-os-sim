@@ -8,20 +8,21 @@ from memory_manager import MemoryManager
 def run_simulation(scheduler, job_list, max_time=20):
     # 주어진 스케줄러와 작업 목록으로 시뮬레이션을 수행하고 결과를 반환함
     print(f"\n시뮬레이션 시작 (Scheduler: {type(scheduler).__name__})")
-    # CPU 준비
-    cpu = CPU()
+    
+    # --- 객체 초기화 부분 수정 (원래 주석 유지) ---
+    # 메모리 설정 (16바이트로 해야 Swap 결과가 나옴)
+    ram = Memory(16)
+    # MMU
+    mmu = MMU(ram)
+    # CPU 준비 (MMU를 인자로 전달)
+    cpu = CPU(mmu)
+    # 메모리 관리자 준비
+    mm = MemoryManager(ram)
+    
     # 전역 시간
     global_time = 0
     # 완료된 프로세스 기록용
     finished_processes = []
-    # 1KB 만큼의 메모리
-    ram = Memory(1024)
-    # MMU
-    mmu = MMU(ram)
-    # 메모리 관리자
-    cpu = CPU(mmu)
-    # 메모리 관리자 준비
-    mm = MemoryManager(ram)
     
     # job_list를 복사해서 사용 (원본 보존)
     pending_jobs = list(job_list)
@@ -60,6 +61,7 @@ def run_simulation(scheduler, job_list, max_time=20):
             
             # 교체 중이면 패스
             if cpu.is_switching:
+                global_time += 1 # 시간은 흘러야 함
                 continue
                 
             current = cpu.current_process
@@ -75,7 +77,7 @@ def run_simulation(scheduler, job_list, max_time=20):
                 print(f"   [Run] PID {current.pid} 실행 중 ...")
             
             # 3-1. 종료 검사 (우선순위 1등, 일 다 했으면 나가는 게 맞음)
-            if current.remaining_time == 0:
+            if current and current.remaining_time == 0:
                 print(f"   [Done] PID {current.pid} 종료!")
                 current.change_state(ProcessState.TERMINATED)
                 current.turnaround_time = (global_time + 1) - current.arrival_time
@@ -85,7 +87,7 @@ def run_simulation(scheduler, job_list, max_time=20):
             
             # 3-2. [25일 차 핵심] 타임 퀀텀 초과 검사 (Preemption)
             # 스케줄러가 RR이고, 현재 프로세스가 퀀텀만큼 실행했다면?
-            elif isinstance(scheduler, RoundRobin_Scheduler):
+            elif isinstance(scheduler, RoundRobin_Scheduler) and current:
                 if cpu.cpu_burst_counter >= scheduler.time_quantum:
                     # 쫓겨나는 로그
                     print(f"   [Timeout] PID {current.pid} 타임 퀀텀({scheduler.time_quantum}) 초과! -> 강제 방출")
@@ -143,33 +145,20 @@ def print_report(finished_processes):
     print("="*65)
 
 def main():
-    print("--- 🖥️  Mini OS Simulator: MMU Test ---")
+    # 시뮬레이션에 사용할 프로세스들 정의
+    job_list = [
+        Process(arrival_time=0, burst_time=3),
+        Process(arrival_time=1, burst_time=3)
+    ]
     
-    # 하드웨어 준비
-    ram = Memory(1024)
-    mmu = MMU(ram)
+    # 스케줄러 선택
+    scheduler = FCFS_Scheduler()
     
-    # 프로세스 생성
-    p1 = Process(0, 10)
+    # 시뮬레이션 실행 및 결과 저장
+    finished = run_simulation(scheduler, job_list, max_time=20)
     
-    print(f"\n[Setup] PID 1 Page Table: {p1.page_table}")
-    
-    # 4. 주소 변환 테스트
-    # Case 1: VA 0번지 (VPN 0, Offset 0) -> PA 20번지 예상
-    pa = mmu.translate(p1, 0)
-    print(f"[Test 1] VA 0 -> PA {pa} (기대값: 20)")
-    
-    # Case 2: VA 2번지 (VPN 0, Offset 2) -> PA 22번지 예상
-    pa = mmu.translate(p1, 2)
-    print(f"[Test 2] VA 2 -> PA {pa} (기대값: 22)")
-    
-    # Case 3: VA 5번지 (VPN 1, Offset 1) -> PA 9번지 예상 (2*4 + 1)
-    pa = mmu.translate(p1, 5)
-    print(f"[Test 3] VA 5 -> PA {pa} (기대값: 9)")
-    
-    # Case 4: VA 100번지 (매핑 안 됨) -> Page Fault 예상
-    pa = mmu.translate(p1, 100)
-    print(f"[Test 4] VA 100 -> PA {pa} (기대값: -1)")
+    # 통계 출력
+    print_report(finished)
 
 if __name__ == "__main__":
     main()

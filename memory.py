@@ -90,10 +90,6 @@ class MMU:
 
             # 만약 페이지가 메모리에 적재되어 있다면 (valid bit가 True)
             if entry['valid']:
-                print(f"--- 디버깅 시작 ---")
-                print(f"현재 접근하려는 vpn: {vpn}")
-                print(f"가져온 entry의 값: {entry}")
-                print(f"page_table 전체 상태: {process.page_table}")
                 # 실제 물리적 페이지 프레임 번호(PFN)를 가져옴
                 pfn = entry['pfn']
                 # 물리 주소 = (PFN * 페이지 크기) + 오프셋
