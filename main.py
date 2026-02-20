@@ -16,8 +16,10 @@ def run_simulation(scheduler, job_list, max_time=30):
     
     global_time = 0
     finished_processes = []
+    waiting_queue = []
     pending_jobs = list(job_list)
     
+    # 시뮬레이션 루프. global_time이 max_time에 도달하거나 모든 프로세스가 종료될 때까지 반복
     while global_time < max_time:
         print(f"\n[Time: {global_time:>2}] {'='*30}") 
 
@@ -50,7 +52,32 @@ def run_simulation(scheduler, job_list, max_time=30):
 
             current = cpu.current_process
             if current:
-                print(f"   [Run] PID {current.pid} 실행 중 | RT: {current.remaining_time}")
+                # 만약 page fault가 나서 page_falut_flag가 True로 설정되었다면
+                # 현재 프로세스를 대기 상태로 전환하고 CPU에서 제거하여 다음 사이클에 다른 프로세스를 실행하도록 함
+                if cpu.page_fault_flag:
+                    print(f"   [OS] Handling Page Fault for PID {current.pid} -> Blocked")
+                    # 상태 변경 (Running -> Waiting)
+                    current.change_state(ProcessState.WAITING)
+                    
+                    # 대기 큐로 이동
+                    waiting_queue.append(current)
+                    
+                    # CPU 비우기 (Context Switch 유발)
+                    cpu.current_process = None
+                    
+                    # 이번 틱은 여기서 종료 (종료 검사 안 함)
+                    pass
+                else:
+                    # 정상 실행 시 로그 및 종료 검사
+                    print(f"   [Run] PID {current.pid} 실행 중 | RT: {current.remaining_time}")
+                    
+                    if current.remaining_time == 0:
+                        print(f"   [Done] PID {current.pid} 종료!")
+                        current.change_state(ProcessState.TERMINATED)
+                        current.turnaround_time = (global_time + 1) - current.arrival_time
+                        finished_processes.append(current)
+                        mm.deallocate(current)
+                        cpu.current_process = None 
                 
                 if current.remaining_time == 0:
                     print(f"   [Done] PID {current.pid} 종료!")
@@ -68,7 +95,7 @@ def run_simulation(scheduler, job_list, max_time=30):
             
         global_time += 1
         
-        if not pending_jobs and not cpu.is_busy() and not scheduler.ready_queue:
+        if not pending_jobs and not cpu.is_busy() and not scheduler.ready_queue and not waiting_queue:
             print("\n조기 종료")
             break
             
