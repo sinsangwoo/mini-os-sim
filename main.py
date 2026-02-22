@@ -8,8 +8,8 @@ from memory_manager import MemoryManager
 def run_simulation(scheduler, job_list, max_time=30):
     print(f"\n 시뮬레이션 시작 (Scheduler: {type(scheduler).__name__})")
     
-    # 하드웨어 초기화 (메모리 16바이트 = 4프레임)
-    ram = Memory(16) 
+    # 하드웨어 초기화 
+    ram = Memory(32) 
     mmu = MMU(ram)
     cpu = CPU(mmu)
     mm = MemoryManager(ram)
@@ -22,7 +22,7 @@ def run_simulation(scheduler, job_list, max_time=30):
     # 시뮬레이션 루프. global_time이 max_time에 도달하거나 모든 프로세스가 종료될 때까지 반복
     while global_time < max_time:
         print(f"\n[Time: {global_time:>2}] {'='*30}") 
-
+        ram.print_map()
         # [Arrival & Allocation]
         for p in list(pending_jobs): 
             if p.arrival_time == global_time:
@@ -102,13 +102,18 @@ def run_simulation(scheduler, job_list, max_time=30):
     return finished_processes
 
 def main():
-    print("--- Mini OS Simulator: LRU Test ---")
+    print("---   Mini OS Simulator: Memory Visualization ---")
     
-    # P1: 0초 도착, 5초 실행
-    # P2: 2초 도착, 5초 실행 (메모리 부족 유발 -> P1 페이지 쫓아냄)
+    # [시나리오]
+    # RAM: 총 8프레임
+    # P1(4프레임 필요): 0초 도착, 3초 실행 -> 0~3 프레임 차지
+    # P2(4프레임 필요): 1초 도착, 3초 실행 -> 4~7 프레임 차지 (RAM 꽉 참!)
+    # P3(4프레임 필요): 2초 도착, 3초 실행 -> OOM 발생! (LRU 교체 발생)
+    
     jobs = [
-        Process(arrival_time=0, burst_time=5),
-        Process(arrival_time=2, burst_time=5)
+        Process(arrival_time=0, burst_time=3),
+        Process(arrival_time=1, burst_time=3),
+        Process(arrival_time=2, burst_time=3)
     ]
     
     run_simulation(FCFS_Scheduler(), jobs)
