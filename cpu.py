@@ -22,8 +22,10 @@ class CPU:
         self.switch_counter = 0
         # 문맥 교환이 완료된 후 다음에 실행할 프로세스 후보. 문맥 교환이 끝나면 이 프로세스를 실행
         self.next_process_candidate = None
-        # 페이지 폴트 발생 여부를 알리는 깃발. True면 현재 프로세스가 페이지 폴트 상태
-        self.page_fault_flag = False 
+        # 시스템 콜 발생 여부를 알리는 깃발. True면 현재 프로세스가 시스템 콜 상태
+        self.trap_flag = False
+        # 시스템 콜 발생 원인 저장 (예: ("EXIT", 0), ("IO", 5) 등)
+        self.trap_cause = None
 
     def is_busy(self):
         return self.current_process is not None or self.is_switching
@@ -41,10 +43,13 @@ class CPU:
         
         print(f"   [Switch] Context Change Start: PID {prev_pid} -> PID {process.pid}")
 
-    # 
+    # CPU 실행 함수. 매 틱마다 호출되어 현재 프로세스를 실행하고, 페이지 폴트나 시스템 콜이 발생하면 적절히 처리
     def run(self):
-        # 페이지 폴트 상태에서 실행 시도 시, 문맥 교환으로 간주하여 CPU를 잠시 멈추고 다음 프로세스 후보로 현재 프로세스를 설정
+        # 페이지 폴트 상태 초기화
         self.page_fault_flag = False
+        # 시스템 콜 상태 초기화
+        self.trap_flag = False
+        self.trap_cause = None
         # 교환 중이라면
         if self.is_switching:
             # 문맥 교환 중이면 카운터 감소. 
@@ -74,14 +79,6 @@ class CPU:
         if not self.current_process:
             return
         
-        # [메모리 접근 시뮬레이션]
-        if random.random() < 0.3:
-            va = random.randint(0, 15)
-            if random.choice(["LOAD", "STORE"]) == "LOAD":
-                self.load_instruction(va)
-            else:
-                self.store_instruction(va, random.randint(1, 100))
-        
         # 만약 페이지 폴트가 발생했다면, 이번 틱은 무효화 하고 바로 리턴
         if self.page_fault_flag:
             return
@@ -90,6 +87,25 @@ class CPU:
         self.current_process.tick()
         self.time += 1
         self.cpu_burst_counter += 1
+
+        # 시스템 콜이 발생했다면, 이번 틱은 무효화 하고 바로 리턴
+        if self.current_process.syscall_request:
+            # Trap 발생!
+            self.trap_flag = True
+            self.trap_cause = self.current_process.syscall_request
+            
+            # 프로세스의 깃발은 내림 (CPU가 접수했으므로)
+            self.current_process.syscall_request = None
+            # 시스템 콜이 발생하면 메모리 접근 등은 생략하고 즉시 OS로 제어권 넘김
+            return 
+        
+        # [메모리 접근 시뮬레이션]
+        if random.random() < 0.3:
+            va = random.randint(0, 15)
+            if random.choice(["LOAD", "STORE"]) == "LOAD":
+                self.load_instruction(va)
+            else:
+                self.store_instruction(va, random.randint(1, 100))
 
     def load_instruction(self, va):
         pa = self.mmu.translate(self.current_process, va, self.time)
