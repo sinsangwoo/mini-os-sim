@@ -23,13 +23,16 @@ class Process:
     # PID 자동 증가를 위한 클래스 변수 
     _pid_counter = 1  
     # 프로세스 생성 시 필요한 정보들을 초기화하는 생성자. arrival_time, burst_time, priority를 인자로 받음
-    def __init__(self, arrival_time, burst_time, priority=0, behavior=None): 
+    # (수정 : behavior가 들어올 경우를 대비해 burst_time에 기본값 0을 설정하여 유연성 확보)
+    def __init__(self, arrival_time, burst_time=0, priority=0, behavior=None): 
         self.pid = Process._pid_counter
+        self.syscall_schedule = []
         Process._pid_counter += 1
         # 프로세스가 시스템에 도착한 시점. 시뮬레이터에서는 이 값을 기반으로 프로세스가 스케줄링 큐에 들어가는 시점을 결정
         self.arrival_time = arrival_time
         # 우선순위는 스케줄링 알고리즘에서 사용될 수 있는 값으로, 기본값은 0 (낮은 우선순위)
         self.priority = priority
+        
         # 만약 behavior가 없다면
         if behavior is None:
             # 예전처럼 burst_time만큼 CPU만 쓰는 프로세스로 간주함.
@@ -38,7 +41,9 @@ class Process:
         else:
             self.behavior = behavior
             # 총 실행 시간(burst_time)은 CPU 작업 시간의 합으로 계산
+            # Why? I/O 시간은 CPU가 일하는 시간이 아니므로 제외하는 것이 실제 OS 원리에 맞음
             self.burst_time = sum(time for action, time in self.behavior if action == "CPU")
+            
         # remaining_time은 프로세스가 CPU에서 실행될 때 남은 실행 시간을 나타내는 변수로, 초기값은 burst_time과 동일하게 설정
         self.remaining_time = self.burst_time
 
@@ -77,7 +82,7 @@ class Process:
             self.syscall_request = ("EXIT", 0)
             return
 
-        # 현재 해야 할 행동 확인
+        # 현재 해야 할 행동 확인 (CPU Burst 혹은 I/O Burst의 시작)
         current_action, current_time = self.behavior[0]
 
         # 만약 현재 해야할 행동이 CPU 연산이라면
@@ -89,12 +94,18 @@ class Process:
             # 이 CPU 버스트가 끝났다면 목록에서 제거
             if current_time - 1 == 0:
                 self.behavior.pop(0)
+                # CPU 버스트가 끝나자마자 다음 행동이 I/O라면 즉시 트랩(Trap) 준비
+                if self.behavior and self.behavior[0][0] != "CPU":
+                    next_action, next_time = self.behavior[0]
+                    self.syscall_request = (next_action, next_time)
+                    self.behavior.pop(0) # OS가 접수할 것이므로 미리 제거
             else:
                 self.behavior[0] = ("CPU", current_time - 1)
                 
         else:
             # CPU 작업이 아니라면 (예: "IO", "SLEEP")
-            # 직접 실행할 수 없으므로 시스템 콜을 요청하고 이번 틱은 아무것도 안 함.
+            # How? 현재 행동이 IO라면 직접 실행할 수 없으므로 시스템 콜을 요청함.
+            # 이 로직은 CPU가 tick을 호출했을 때 프로세스가 "나 이제 I/O 할래"라고 선언하는 지점임.
             self.syscall_request = (current_action, current_time)
             # 요청했으므로 목록에서는 바로 제거 (OS가 알아서 처리해 줄 거니까)
             self.behavior.pop(0)
