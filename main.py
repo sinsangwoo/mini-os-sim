@@ -4,12 +4,11 @@ from scheduler import FCFS_Scheduler
 from cpu import CPU
 from memory import Memory, MMU
 from memory_manager import MemoryManager
-from io_device import IODevice 
+from io_device import IODevice
 
 def run_simulation(scheduler, job_list, max_time=30):
     print(f"\n 시뮬레이션 시작 (Scheduler: {type(scheduler).__name__})")
     
-    # 하드웨어 초기화 
     ram = Memory(32) 
     mmu = MMU(ram)
     cpu = CPU(mmu)
@@ -20,25 +19,36 @@ def run_simulation(scheduler, job_list, max_time=30):
     finished_processes = []
     pending_jobs = list(job_list)
     
-    # 기존의 범용 wait_queue는 SLEEP 등을 위해 남겨둘 수도 있지만, 
-    # 일단은 I/O 처리를 disk 객체에 전담시킴
-    sleep_queue = [] # 나중에 SLEEP 시스템 콜을 위해 이름 변경
+    # OS가 직접 관리하는 타이머 대기열
+    sleep_queue = [] 
     
     while global_time < max_time:
         print(f"\n[Time: {global_time:>2}] {'='*30}") 
-        ram.print_map() 
 
-        # [Hardware Tick] I/O 디바이스 동작
-        # CPU와 무관하게 디스크는 매 틱마다 돌아감
+        # [Hardware Tick]
         disk.tick()
 
-        # [Interrupt Handling] I/O 완료 인터럽트 처리
-        # 디스크 작업이 끝난 프로세스가 있다면 깨워서 Ready Queue로 보냄
+        # [Interrupt Handling] I/O 완료
         while disk.finished_queue:
             proc = disk.finished_queue.pop(0)
-            print(f"    [OS] I/O 완료 인터럽트 수신 -> PID {proc.pid} Ready Queue 복귀")
+            print(f"   ⚡ [OS] I/O 완료 인터럽트 수신 -> PID {proc.pid} Ready Queue 복귀")
             proc.change_state(ProcessState.READY)
             scheduler.add_process(proc)
+
+        # [Timer Handling] SLEEP 완료 처리
+        # sleep_queue에 있는 녀석들의 시간을 1씩 줄이고, 0이 되면 깨움
+        # 리스트를 순회하며 삭제할 때는 복사본(list())을 사용해야 안전함
+        for entry in list(sleep_queue):
+            proc, remaining_sleep = entry
+            remaining_sleep -= 1
+            # 남은 수면 시간이 업데이트된 값을 반영하도록 entry를 수정
+            entry[1] = remaining_sleep 
+            
+            if remaining_sleep <= 0:
+                print(f"    [OS] 타이머 알람! PID {proc.pid} 수면 완료 -> Ready Queue 복귀")
+                proc.change_state(ProcessState.READY)
+                scheduler.add_process(proc)
+                sleep_queue.remove(entry)
 
         # [Arrival & Allocation]
         for p in list(pending_jobs): 
@@ -82,14 +92,14 @@ def run_simulation(scheduler, job_list, max_time=30):
                         cpu.current_process = None
                         
                     elif sys_type == "IO":
-                        # OS가 직접 카운트하지 않고 I/O 디바이스에 넘김
                         print(f"    [Block] PID {current.pid} -> Disk 대기열로 이동")
                         current.change_state(ProcessState.WAITING)
-                        disk.request_io(current, sys_arg) # 디바이스에 요청
+                        disk.request_io(current, sys_arg) 
                         cpu.current_process = None
                         
                     elif sys_type == "SLEEP":
-                        # SLEEP은 I/O 장치를 안 쓰므로 OS가 직접 관리 (기존 로직 유지)
+                        # SLEEP 시스템 콜 처리
+                        print(f"    [Block] PID {current.pid} -> Sleep Queue로 이동 ({sys_arg}틱 대기)")
                         current.change_state(ProcessState.WAITING)
                         sleep_queue.append([current, sys_arg])
                         cpu.current_process = None
@@ -101,8 +111,7 @@ def run_simulation(scheduler, job_list, max_time=30):
                 if cpu.page_fault_flag:
                     print(f"    [OS] Handling Page Fault for PID {current.pid} -> Blocked")
                     current.change_state(ProcessState.WAITING)
-                    # 실제로는 디스크에서 페이지를 가져오는 I/O 요청을 해야 하지만, 
-                    # 시뮬레이션 단순화를 위해 일단 sleep_queue에 1틱 대기로 넣습니다.
+                    # (임시) 페이지 폴트가 발생하면 1틱 동안 대기 후 Ready Queue로 복귀하는 시뮬레이션
                     sleep_queue.append([current, 1]) 
                     cpu.current_process = None
                     global_time += 1
@@ -110,24 +119,13 @@ def run_simulation(scheduler, job_list, max_time=30):
                 
                 print(f"     [Run] PID {current.pid} 실행 중 | 남은 CPU: {current.remaining_time}")
 
-        # 5. [SLEEP Queue 처리] (기존에 작성하신 로직 활용)
-        for entry in list(sleep_queue):
-            proc, remaining = entry
-            remaining -= 1
-            entry[1] = remaining
-            if remaining <= 0:
-                print(f"    [Wakeup] PID {proc.pid} 수면/폴트 대기 완료 -> Ready Queue 복귀")
-                proc.change_state(ProcessState.READY)
-                scheduler.add_process(proc)
-                sleep_queue.remove(entry)
-
-        # 6. [Aging]
+        # [Aging]
         for p in scheduler.ready_queue:
             p.waiting_time += 1
             
         global_time += 1
         
-        # 종료 조건 업데이트: pending_jobs, cpu, scheduler, disk, sleep_queue 모두 비어야 함
+        # 종료 조건 업데이트
         if not pending_jobs and not cpu.is_busy() and not scheduler.ready_queue and not disk.is_busy() and not sleep_queue and not disk.finished_queue:
             print("\n 모든 작업이 완료되어 시뮬레이션을 조기 종료합니다.")
             break
@@ -135,14 +133,14 @@ def run_simulation(scheduler, job_list, max_time=30):
     return finished_processes
 
 def main():
-    print("---   Mini OS Simulator: I/O Device Modeling ---")
+    print("---   Mini OS Simulator: SLEEP System Call ---")
     
     # [시나리오]
-    # P1: CPU 2초 -> I/O 5초 -> CPU 2초
-    # P2: CPU 10초 (P1이 I/O 하는 동안 P2가 CPU를 독점해야 함!)
+    # P1: CPU 2초 -> SLEEP 3초 -> CPU 1초
+    # P2: CPU 5초 (P1이 자는 동안 CPU를 열심히 씀)
     jobs = [
-        Process(arrival_time=0, behavior=[("CPU", 2), ("IO", 5), ("CPU", 2)]),
-        Process(arrival_time=1, behavior=[("CPU", 10)]) 
+        Process(arrival_time=0, behavior=[("CPU", 2), ("SLEEP", 3), ("CPU", 1)]),
+        Process(arrival_time=1, behavior=[("CPU", 5)]) 
     ]
     
     run_simulation(FCFS_Scheduler(), jobs, max_time=30)
