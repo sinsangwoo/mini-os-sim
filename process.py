@@ -144,6 +144,27 @@ class Process:
             
         return False
         
+    # 프로세스가 자신을 복제하여 새로운 자식 프로세스를 생성하는 메서드. 
+    # 현재 시간(current_time)을 인자로 받아 자식 프로세스의 도착 시간을 설정
+    def clone(self, current_time):
+        # 자식은 현재 시간에 태어남
+        child = Process(arrival_time=current_time, priority=self.priority)
+        
+        # 남은 행동 패턴 복사
+        # 부모가 하던 일의 나머지를 자식도 똑같이 해야 함
+        child.behavior = list(self.behavior) 
+        child.burst_time = self.burst_time
+        child.remaining_time = self.remaining_time
+        
+        # 레지스터 복사 (PC 등)
+        child.registers = dict(self.registers)
+        
+        # 부모-자식 관계 기록 (선택 사항, 로그 출력용)
+        child.parent_pid = self.pid
+        
+        print(f"    [FORK] PID {self.pid}(부모)가 PID {child.pid}(자식)을 낳았습니다")
+        return child
+    
     def __repr__(self):
         state_str = f"{self.state.name:<10}" 
         return (f"[PID:{self.pid:<2} | {state_str} | "

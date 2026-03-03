@@ -1,6 +1,6 @@
 import time
 from process import Process, ProcessState
-from scheduler import FCFS_Scheduler
+from scheduler import FCFS_Scheduler, RoundRobinScheduler
 from cpu import CPU
 from memory import Memory, MMU
 from memory_manager import MemoryManager
@@ -103,6 +103,24 @@ def run_simulation(scheduler, job_list, max_time=30):
                         current.change_state(ProcessState.WAITING)
                         sleep_queue.append([current, sys_arg])
                         cpu.current_process = None
+                    
+                    # FORK 시스템 콜 처리
+                    elif sys_type == "FORK":
+                        child_process = current.clone(global_time)
+                        
+                        # 자식에게 메모리 할당 (실패하면 FORK 실패 처리해야 하지만, 여기선 성공 가정)
+                        if mm.allocate(child_process):
+                            # 자식을 Ready Queue에 넣음
+                            child_process.change_state(ProcessState.READY)
+                            scheduler.add_process(child_process)
+                            print(f"    [OS] 자식 프로세스(PID {child_process.pid}) Ready Queue 등록 완료")
+                        else:
+                            print(f"    [OS] 메모리 부족으로 FORK 실패 (PID {child_process.pid} 파기)")
+                            # 실패 처리 로직 (생략)
+
+                        # FORK는 I/O나 SLEEP과 달리 부모를 대기(Block)시키지 않음
+                        # 부모는 계속해서 CPU를 쓸 수 있음 (물론 RR이라면 퀀텀에 따라 쫓겨날 순 있음)
+                        # 따라서 cpu.current_process = None을 하지 않고 그대로 둠
                         
                     global_time += 1
                     continue
@@ -135,15 +153,16 @@ def run_simulation(scheduler, job_list, max_time=30):
 def main():
     print("---   Mini OS Simulator: SLEEP System Call ---")
     
-    # [시나리오]
-    # P1: CPU 2초 -> SLEEP 3초 -> CPU 1초
-    # P2: CPU 5초 (P1이 자는 동안 CPU를 열심히 씀)
+     # [시나리오]
+    # P1: CPU 2초 -> FORK -> CPU 2초
+    # P1이 2초 실행 후 자식(P2)을 낳음.
+    # 자식(P2)은 부모의 남은 행동인 'CPU 2초'를 물려받아 실행하게 됨.
     jobs = [
-        Process(arrival_time=0, behavior=[("CPU", 2), ("SLEEP", 3), ("CPU", 1)]),
-        Process(arrival_time=1, behavior=[("CPU", 5)]) 
+        Process(arrival_time=0, behavior=[("CPU", 2), ("FORK", 0), ("CPU", 2)])
     ]
     
-    run_simulation(FCFS_Scheduler(), jobs, max_time=30)
+    # FORK 후 부모와 자식이 어떻게 스케줄링되는지 보기 위해 RR 사용
+    run_simulation(RoundRobinScheduler(2), jobs, max_time=20)
 
 if __name__ == "__main__":
     main()
