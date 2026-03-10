@@ -84,11 +84,15 @@ def run_simulation(scheduler, job_list, max_time=30):
                     print(f"    [Syscall] PID {current.pid} requested '{sys_type}' for {sys_arg} ticks.")
                     
                     if sys_type == "EXIT":
-                        print(f"    [Done] PID {current.pid} 정상 종료!")
+                        print(f"    [Syscall] PID {current.pid} requested 'EXIT'. 정상 종료 처리 중...")
+                        # terminated로 상태 변경
                         current.change_state(ProcessState.TERMINATED)
+                        # 종료 시간 계산
                         current.turnaround_time = (global_time + 1) - current.arrival_time
                         finished_processes.append(current)
+                        # 자원 반납
                         mm.deallocate(current)
+                        # cpu에서 제거
                         cpu.current_process = None
                         
                     elif sys_type == "IO":
@@ -143,7 +147,7 @@ def run_simulation(scheduler, job_list, max_time=30):
             
         global_time += 1
         
-        # 종료 조건 업데이트
+        # 모든 작업이 완료된 경우 시뮬레이션 조기 종료
         if not pending_jobs and not cpu.is_busy() and not scheduler.ready_queue and not disk.is_busy() and not sleep_queue and not disk.finished_queue:
             print("\n 모든 작업이 완료되어 시뮬레이션을 조기 종료합니다.")
             break
@@ -151,18 +155,15 @@ def run_simulation(scheduler, job_list, max_time=30):
     return finished_processes
 
 def main():
-    print("---   Mini OS Simulator: SLEEP System Call ---")
+    print("--- 🖥️  Mini OS Simulator: Graceful EXIT ---")
     
-     # [시나리오]
-    # P1: CPU 2초 -> FORK -> CPU 2초
-    # P1이 2초 실행 후 자식(P2)을 낳음.
-    # 자식(P2)은 부모의 남은 행동인 'CPU 2초'를 물려받아 실행하게 됨.
+    # [시나리오]
+    # 아주 단순한 프로세스 하나만 넣어서, 끝날 때 EXIT 시스템 콜이 잘 불리는지 확인
     jobs = [
-        Process(arrival_time=0, behavior=[("CPU", 2), ("FORK", 0), ("CPU", 2)])
+        Process(arrival_time=0, behavior=[("CPU", 2)])
     ]
     
-    # FORK 후 부모와 자식이 어떻게 스케줄링되는지 보기 위해 RR 사용
-    run_simulation(RoundRobinScheduler(2), jobs, max_time=20)
+    run_simulation(FCFS_Scheduler(), jobs, max_time=10)
 
 if __name__ == "__main__":
     main()
